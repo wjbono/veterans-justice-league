@@ -1,0 +1,18 @@
+name = "vjl-media-api"
+main = "src/index.js"
+compatibility_date = "2026-08-24"
+
+[vars]
+ALLOWED_ORIGINS = "https://wjbono.github.io"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "vjl-media"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vjl-media"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[triggers]
+crons = ["*/10 * * * *"]
