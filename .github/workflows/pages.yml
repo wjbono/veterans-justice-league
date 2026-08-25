@@ -40,7 +40,11 @@ jobs:
           node --check assets/js/config.js
           node --check assets/js/gallery.js
           node --check assets/js/admin.js
+          node --check worker/src/media-policy.js
           node --check worker/src/index.js
+          node --check worker/tests/media-policy.test.mjs
+      - name: Test media ingestion policy
+        run: node worker/tests/media-policy.test.mjs
       - name: Prepare production assets
         run: python3 .github/scripts/prepare_assets.py
       - name: Prepare static launch metadata
