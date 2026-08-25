@@ -1,20 +1,20 @@
+const ASSET_BASE=location.pathname.includes('/admin/')?'../assets/':'assets/';
 const PLACEHOLDER_IMAGES=[
-  'assets/images/placeholders/hero.svg',
-  'assets/images/placeholders/gallery-1.svg',
-  'assets/images/placeholders/gallery-2.svg',
-  'assets/images/placeholders/gallery-3.svg',
-  'assets/images/placeholders/gallery-4.svg'
+  'images/placeholders/hero.svg',
+  'images/placeholders/gallery-1.svg',
+  'images/placeholders/gallery-2.svg',
+  'images/placeholders/gallery-3.svg',
+  'images/placeholders/gallery-4.svg'
 ];
 
 document.querySelectorAll('img').forEach((img,index)=>{
   const original=img.getAttribute('src')||'';
   const isLogo=img.classList.contains('logo')||img.classList.contains('footer-logo')||original.includes('vjl-logo');
   if(isLogo){
-    img.src=original.startsWith('../')?'../assets/images/vjl-logo.png':'assets/images/vjl-logo.png';
+    img.src=ASSET_BASE+'images/vjl-logo.png';
     return;
   }
-  const prefix=original.startsWith('../')?'../':'';
-  const replacement=prefix+PLACEHOLDER_IMAGES[index%PLACEHOLDER_IMAGES.length];
+  const replacement=ASSET_BASE+PLACEHOLDER_IMAGES[index%PLACEHOLDER_IMAGES.length];
   if(/^https?:\/\//.test(original)||original.includes('googleusercontent.com')) img.src=replacement;
   img.addEventListener('error',()=>{
     if(img.dataset.placeholderFallback==='1') return;
