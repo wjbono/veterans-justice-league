@@ -2,6 +2,7 @@
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,6 +21,16 @@ PROTOTYPE_MEDIA_REFS = (
     'assets/images/vjl-outreach.jpg',
     'assets/images/vjl-team.jpg',
 )
+ASSET_BUDGETS = {
+    'assets/css/styles.css': 24 * 1024,
+    'assets/css/qc.css': 8 * 1024,
+    'assets/css/gallery.css': 12 * 1024,
+    'assets/css/admin.css': 12 * 1024,
+    'assets/js/site.js': 12 * 1024,
+    'assets/js/config.js': 12 * 1024,
+    'assets/js/gallery.js': 18 * 1024,
+    'assets/js/admin.js': 32 * 1024,
+}
 
 class PageParser(HTMLParser):
     def __init__(self):
@@ -36,6 +47,10 @@ class PageParser(HTMLParser):
         self.canonicals = []
         self.icons = []
         self.has_org_schema = False
+        self.images = []
+        self.iframes = []
+        self.menu_button = None
+        self.mobile_nav = None
 
     def handle_starttag(self, tag, attrs):
         data = dict(attrs)
@@ -49,8 +64,12 @@ class PageParser(HTMLParser):
             self.h1_count += 1
         elif tag == 'nav':
             self.has_nav = True
+            if 'data-mobile-menu' in data:
+                self.mobile_nav = data
         elif tag == 'script' and data.get('id') == 'vjl-org-schema' and data.get('type') == 'application/ld+json':
             self.has_org_schema = True
+        elif tag == 'button' and 'data-menu-button' in data:
+            self.menu_button = data
         elif tag == 'a':
             href = data.get('href','')
             classes = set(data.get('class','').split())
@@ -60,7 +79,17 @@ class PageParser(HTMLParser):
                 self.refs.append(('href', href))
             if data.get('target') == '_blank':
                 self.blank_links.append((href, set(data.get('rel','').lower().split())))
-        elif tag in ('img','script','iframe','source','video','audio'):
+        elif tag == 'img':
+            self.images.append(data)
+            src = data.get('src','')
+            if src:
+                self.refs.append(('src', src))
+        elif tag == 'iframe':
+            self.iframes.append(data)
+            src = data.get('src','')
+            if src:
+                self.refs.append(('src', src))
+        elif tag in ('script','source','video','audio'):
             src = data.get('src','')
             if src:
                 self.refs.append(('src', src))
@@ -110,6 +139,10 @@ def parse_page(name):
     for bad in FORBIDDEN:
         if bad in low:
             errors.append(f'{name}: forbidden external image host reference: {bad}')
+    if re.search(r'<img\b[^>]*\bsrc=["\']\s*["\']', text, re.I):
+        errors.append(f'{name}: empty image src is not allowed')
+    if re.search(r'<img\b[^>]*\bsrc=["\']https?://', text, re.I):
+        errors.append(f'{name}: public image hotlinks are not allowed')
     parser = PageParser()
     try:
         parser.feed(text)
@@ -142,6 +175,27 @@ def validate_page(name):
     if not parser.has_qc:
         errors.append(f'{name}: missing build-time QC stylesheet')
 
+    if parser.menu_button:
+        if parser.menu_button.get('aria-controls') != 'mobile-nav':
+            errors.append(f'{name}: mobile menu button must aria-control mobile-nav')
+        if parser.menu_button.get('aria-expanded') not in ('false','true'):
+            errors.append(f'{name}: mobile menu button is missing aria-expanded')
+    elif name != '404.html':
+        errors.append(f'{name}: missing mobile menu button')
+    if parser.mobile_nav:
+        if parser.mobile_nav.get('id') != 'mobile-nav':
+            errors.append(f'{name}: mobile navigation must use id="mobile-nav"')
+    elif name != '404.html':
+        errors.append(f'{name}: missing mobile navigation')
+
+    for image in parser.images:
+        if image.get('decoding') != 'async':
+            errors.append(f'{name}: image missing decoding="async": {image.get("src", "[dynamic]")}')
+    if name == 'index.html':
+        hero_images = [img for img in parser.images if 'hero.svg' in img.get('src','')]
+        if hero_images and hero_images[0].get('fetchpriority') != 'high':
+            errors.append('index.html: hero image should use fetchpriority="high"')
+
     if name in INDEXABLE_PAGES:
         canonical = expected_canonical(name)
         if parser.canonicals != [canonical]:
@@ -172,6 +226,24 @@ def validate_page(name):
         robots = parser.meta.get('robots','').lower()
         if 'noindex' not in robots:
             errors.append('404.html: missing noindex robots directive')
+
+    if name == 'contact.html':
+        if len(parser.iframes) != 1:
+            errors.append(f'contact.html: expected one contact iframe, found {len(parser.iframes)}')
+        else:
+            frame = parser.iframes[0]
+            if not frame.get('title'):
+                errors.append('contact.html: contact iframe needs a title')
+            if frame.get('loading') != 'lazy':
+                errors.append('contact.html: contact iframe should lazy-load')
+        if 'open the form directly' not in text.lower():
+            errors.append('contact.html: direct contact-form fallback link is missing')
+
+    if name == 'gallery.html':
+        if 'role="dialog"' not in text or 'aria-modal="true"' not in text:
+            errors.append('gallery.html: gallery modal dialog semantics missing')
+        if 'data-gallery-image' not in text:
+            errors.append('gallery.html: gallery modal image target missing')
 
     for href, rel in parser.blank_links:
         if 'noopener' not in rel:
@@ -223,6 +295,22 @@ def validate_no_prototype_media():
     return errors
 
 
+def validate_asset_budgets():
+    errors = []
+    for rel, limit in ASSET_BUDGETS.items():
+        path = ROOT / rel
+        if not path.exists():
+            continue
+        size = path.stat().st_size
+        if size > limit:
+            errors.append(f'{rel}: {size} bytes exceeds performance budget of {limit} bytes')
+    for name in PUBLIC_PAGES:
+        path = ROOT / name
+        if path.exists() and path.stat().st_size > 40 * 1024:
+            errors.append(f'{name}: HTML exceeds 40 KiB page-shell budget')
+    return errors
+
+
 def main():
     errors = []
     titles = {}
@@ -236,6 +324,7 @@ def main():
             descriptions.setdefault(desc, []).append(page)
     errors.extend(validate_admin())
     errors.extend(validate_no_prototype_media())
+    errors.extend(validate_asset_budgets())
 
     for title, pages in titles.items():
         if len(pages) > 1:
@@ -251,8 +340,9 @@ def main():
         'assets/images/placeholders/gallery-2.svg',
         'assets/images/placeholders/gallery-3.svg',
         'assets/images/placeholders/gallery-4.svg',
-        'assets/css/styles.css','assets/css/qc.css',
-        'assets/js/site.js','assets/js/config.js','robots.txt','sitemap.xml'
+        'assets/css/styles.css','assets/css/qc.css','assets/css/gallery.css','assets/css/admin.css',
+        'assets/js/site.js','assets/js/config.js','assets/js/gallery.js','assets/js/admin.js',
+        'robots.txt','sitemap.xml'
     ]
     for rel in required:
         if not (ROOT / rel).exists():
@@ -263,7 +353,7 @@ def main():
         for error in errors:
             print(f' - {error}', file=sys.stderr)
         sys.exit(1)
-    print(f'Static site validation passed for {len(PUBLIC_PAGES)} public pages plus admin safeguards.')
+    print(f'Static site validation passed for {len(PUBLIC_PAGES)} public pages plus admin safeguards and performance budgets.')
 
 if __name__ == '__main__':
     main()
