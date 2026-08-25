@@ -8,6 +8,7 @@ Static HTML/CSS/JavaScript designed for GitHub Pages. Pages included:
 
 - Home
 - About / Mission / Vision
+- Programs
 - VJL Housing
 - Behind-the-Wall Training
 - Outreach
@@ -17,7 +18,9 @@ Static HTML/CSS/JavaScript designed for GitHub Pages. Pages included:
 - Team
 - Media Review (`/admin/`)
 
-The exact supplied VJL logo is stored at `assets/images/vjl-logo.png` without alteration.
+The exact supplied VJL logo is preserved as verified base64 build chunks under `.build-assets/`. The GitHub Pages workflow reconstructs `assets/images/vjl-logo.png` before deployment and verifies both its 32,857-byte size and SHA-256 checksum before the site can publish. `.build-assets/` is removed from the deployed artifact.
+
+The Pages build also generates canonical URLs, Open Graph/Twitter metadata, favicon references, homepage Organization structured data, noindex directives for `/admin/` and `404.html`, and the shared QC stylesheet link directly into the deployed HTML. A static-site validator must pass before Pages deployment proceeds.
 
 ## Content provenance
 
@@ -36,4 +39,8 @@ Donation continues to use the Stripe donation link currently published by VJL. C
 
 ## Cloudflare backend
 
-`worker/` contains the R2/D1/Worker implementation and schema. It is ready to deploy once Cloudflare account resources can be created. No production DNS changes are required for development.
+`worker/` contains the R2/D1/Worker implementation and schema. It is ready for account-side deployment/configuration once the required Cloudflare resources are created. The intended production media path is GitHub Pages → Worker/API → D1 metadata + R2 media. No production DNS changes are required during development.
+
+## Launch tracking
+
+`BACKLOG.md` is the authoritative publish-readiness checklist. Production DNS remains unchanged until explicit client authorization.
