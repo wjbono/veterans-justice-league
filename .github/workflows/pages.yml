@@ -38,12 +38,27 @@ jobs:
         run: python3 .github/scripts/prepare_site.py
       - name: Validate static site
         run: python3 .github/scripts/validate_site.py
+      - name: Assemble publishable site artifact
+        shell: bash
+        run: |
+          rm -rf _site
+          mkdir -p _site
+          cp ./*.html _site/
+          cp robots.txt sitemap.xml .nojekyll _site/
+          cp -R assets admin _site/
+          test -f _site/index.html
+          test -f _site/assets/images/vjl-logo.png
+          test -f _site/admin/index.html
+          test ! -e _site/BACKLOG.md
+          test ! -e _site/README.md
+          test ! -e _site/worker
+          test ! -e _site/.github
       - uses: actions/configure-pages@v5
         with:
           enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
