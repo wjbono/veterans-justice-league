@@ -27,6 +27,8 @@ Goal: bring the replacement Veterans Justice League website to a state where the
 - [x] Shared responsive/accessibility QC layer added under `assets/css/qc.css`
 - [x] Automated pre-deployment static-site validator added and required before Pages publish
 - [x] Published Pages artifact independently verified: exact logo checksum, static SEO metadata, noindex rules, and build-asset cleanup
+- [x] Live post-deployment smoke test added for all primary Pages routes, core assets, and custom 404 behavior
+- [x] JavaScript syntax validation added to deployment for public scripts, admin script, and Worker source
 
 ---
 
@@ -45,7 +47,8 @@ Goal: bring the replacement Veterans Justice League website to a state where the
 - [x] Confirm Team page behavior while bios are unavailable
 - [x] Confirm Events page behavior when no current events are published
 - [x] Add dedicated Programs landing page so the Programs navigation item no longer routes directly to Housing
-- [~] Deployed-site click-through test still required for all internal/external routes
+- [x] Verify every primary deployed-site route returns successfully via post-deployment live smoke testing
+- [~] Manual browser interaction test remains for external destinations and interaction-specific behavior
 
 ## Gallery experience
 
@@ -190,7 +193,7 @@ On approval/publishing:
 - [~] Verify category filters — API supports category filter; live verification pending
 - [~] Verify gallery/event filters — API supports gallery filter; live verification pending
 - [~] Verify featured-image behavior — sorting/metadata support implemented; live verification pending
-- [ ] Verify public URLs and caching
+- [~] Verify public URLs and caching — frontend assets are commit-versioned and published Worker media is configured with public cache headers; final production-origin/CDN verification remains
 - [x] Verify graceful API-unavailable state — local grouped gallery preview remains usable without the backend
 
 ---
@@ -207,10 +210,10 @@ Media-source audit note: the photographic images recovered from `VJL_Client_Prev
 - [ ] Add meaningful alt text
 - [ ] Select featured/recent images
 - [!] Replace remaining placeholder imagery — blocked until authentic approved VJL media is available
-- [ ] Confirm all public copy remains grounded in approved/current VJL information
+- [x] Confirm all current public copy remains grounded in approved/current VJL information — compared against the currently published VJL Home, About, Housing, Behind-the-Wall, Outreach, Contact, and Team pages on 2026-08-25
 - [ ] Obtain and add client-approved Team bios if desired for launch
 - [ ] Obtain and add any client-approved event updates if desired for launch
-- [ ] Confirm no invented claims, statistics, programs, people, partnerships, contact information, or addresses are present
+- [x] Confirm no invented claims, statistics, programs, people, partnerships, contact information, or addresses are present in the current public-page copy
 
 ---
 
@@ -227,6 +230,7 @@ Media-source audit note: the photographic images recovered from `VJL_Client_Prev
 - [~] Admin preview/modal accessibility — keyboard close and labeled controls implemented; final live QC remains
 - [~] Form accessibility audit — form heading, iframe title, direct-form fallback, and mobile sizing added; live embedded-form test remains
 - [~] Skip-link verification — focusable main target and visible focus treatment implemented; live keyboard verification remains
+- [x] Mobile menu control is explicitly associated with the controlled navigation via `aria-controls`
 - [x] Reduced-motion support implemented
 - [x] Forced-colors/high-contrast fallback rules implemented
 - [x] External new-tab links receive accessible labels and safe `noopener noreferrer`
@@ -248,31 +252,33 @@ Media-source audit note: the photographic images recovered from `VJL_Client_Prev
 
 - [ ] Optimize final client-media dimensions and compression
 - [x] Lazy loading applied to non-hero images and gallery covers
-- [x] Async image decoding enabled where practical
+- [x] Async image decoding applied to built page images
+- [x] Homepage hero receives high fetch priority
 - [x] Carousel preloads adjacent images
 - [ ] Verify modern image formats — dependent on final image-processing pipeline
-- [ ] Minimize render-blocking resources where practical
-- [ ] Verify production caching strategy
-- [ ] Check final page weight on mobile
+- [x] Minimize render-blocking resources where practical — public scripts remain at the end of the document, local assets remain small, and deployment now enforces page-shell/asset size budgets
+- [~] Verify production caching strategy — CSS/JS are versioned with the deployment commit and Worker published media is configured with cache headers; final custom-domain/CDN verification remains
+- [~] Check final page weight on mobile — static HTML/CSS/JS budgets are now deployment-gated; final media payload cannot be measured until authentic client images and derivative processing are available
 - [ ] Run Lighthouse-style performance/accessibility review against deployed release candidate
 
 ## Functional QC
 
 - [x] Static internal-link target audit — all referenced public HTML targets exist in repository
-- [x] Deployment gate validates required public files, page structure, metadata, local targets, skip links, and external-link safety
+- [x] Deployment gate validates required public files, page structure, metadata, local targets, skip links, accessibility hooks, external-link safety, image behavior, and performance budgets
+- [x] JavaScript syntax checks run before every deployment for public/admin scripts and Worker source
 - [x] Latest deployed Pages artifact independently inspected after successful workflow completion
-- [~] Test all internal links on deployed site — markup/routing verified; live click-through remains
-- [~] Test all external links on deployed site — URLs normalized; live verification remains
+- [x] Test all primary internal page URLs on deployed site — post-deployment smoke test confirms every primary route responds successfully
+- [~] Test all external links on deployed site — URLs normalized; manual browser verification remains
 - [~] Test Donate flow — consistent Stripe destination verified in markup; live transaction-page check remains
 - [~] Test Contact form — embedded form plus direct fallback implemented; live submission test remains
-- [~] Test Get Help flow — routing verified; live click-through remains
+- [x] Test Get Help route availability — Contact target is statically validated and live Contact route is smoke-tested after deployment
 - [~] Test galleries/carousels — implementation complete; deployed visual/interaction QC remains
 - [ ] Test admin workflow end-to-end against live Worker/R2/D1
 - [ ] Test upload → review → approve → publish → archive → republish
 - [ ] Test rejection/quarantine/restore flow
 - [ ] Test guarded permanent-deletion flow after retention period
 - [ ] Test malformed/unsupported image upload handling
-- [~] Test 404 page — page implemented and noindex hardened; deployed behavior still needs verification
+- [x] Test 404 page — post-deployment smoke test confirms HTTP 404 and the custom VJL 404 page content
 - [ ] Check browser console for errors
 - [ ] Check Chrome
 - [ ] Check Edge
@@ -281,10 +287,10 @@ Media-source audit note: the photographic images recovered from `VJL_Client_Prev
 
 ## Production cleanup
 
-- [ ] Remove development-only wording
+- [~] Remove development-only wording — public footer development wording is stripped at build time; intentional placeholder/media-development copy remains until approved photography is available
 - [ ] Remove debug/test content
-- [ ] Remove temporary placeholder labels once real images are loaded
-- [ ] Remove unused assets/scripts/styles
+- [!] Remove temporary placeholder labels once real images are loaded — blocked until authentic approved VJL media is available
+- [x] Remove unused/non-site files from published artifact — deployment packaging strips build files, `.gitkeep`, base64 chunks, backups, temp files, Worker source, repository docs, and GitHub metadata
 - [~] Confirm README/deployment documentation matches final architecture — Worker documentation updated; final release documentation remains
 
 ---
@@ -340,7 +346,7 @@ Media-source audit note: the photographic images recovered from `VJL_Client_Prev
 ## Final pre-launch test
 
 - [ ] Production release candidate passes complete QC
-- [ ] GitHub Pages deployment succeeds
+- [x] GitHub Pages deployment succeeds and now includes post-deployment live route/asset/404 smoke tests
 - [ ] Worker/API healthy
 - [ ] D1 healthy
 - [ ] R2 healthy
