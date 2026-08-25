@@ -24,6 +24,7 @@ Goal: bring the replacement Veterans Justice League website to a state where the
 - [x] Initial Cloudflare Worker/D1/R2 backend scaffold added under `worker/`
 - [x] Initial media-review/admin shell added under `/admin/`
 - [x] Custom `404.html` created for GitHub Pages
+- [x] Shared responsive/accessibility QC layer added under `assets/css/qc.css`
 
 ---
 
@@ -31,8 +32,10 @@ Goal: bring the replacement Veterans Justice League website to a state where the
 
 ## Navigation and page behavior
 
-- [x] Audit every desktop navigation link
-- [x] Audit every mobile navigation link
+- [x] Audit every desktop navigation link at the markup/routing level
+- [x] Audit every mobile navigation link at the markup/routing level
+- [x] Normalize all Programs links to the dedicated Programs landing page
+- [x] Add `aria-current` handling for active navigation
 - [x] Verify all buttons and CTAs at the markup/routing level
 - [x] Verify Donate links consistently target the published Stripe donation URL
 - [x] Verify Contact/Get Help links route to the Contact page
@@ -40,6 +43,7 @@ Goal: bring the replacement Veterans Justice League website to a state where the
 - [x] Confirm Team page behavior while bios are unavailable
 - [x] Confirm Events page behavior when no current events are published
 - [x] Add dedicated Programs landing page so the Programs navigation item no longer routes directly to Housing
+- [~] Deployed-site click-through test still required for all internal/external routes
 
 ## Gallery experience
 
@@ -52,16 +56,18 @@ Goal: bring the replacement Veterans Justice League website to a state where the
 - [x] Add touch/swipe-friendly behavior for mobile
 - [x] Display captions where available
 - [x] Display accessible alt text
+- [x] Add modal focus containment/inert page background behavior
+- [x] Add adjacent-image preloading for carousel navigation
 - [~] Support gallery/event assignment from media metadata rather than hardcoded HTML — frontend and Worker API now support grouped metadata; live D1 connection still pending
 - [x] Keep homepage Recent Moments as a small preview linking into the full gallery experience
 
 ## Responsive behavior
 
-- [ ] Full desktop visual pass
-- [ ] Full tablet visual pass
-- [ ] Full mobile visual pass
-- [ ] Check navigation at intermediate viewport widths
-- [~] Check buttons, cards, forms, galleries, carousels, and footer wrapping — gallery/carousel and admin responsive behavior implemented; full-site pass remains
+- [~] Full desktop visual pass — code-level responsive review and fixes completed; live visual pass remains
+- [~] Full tablet visual pass — responsive rules implemented; live visual pass remains
+- [~] Full mobile visual pass — mobile wrapping/tap-target/form/carousel rules implemented; live visual pass remains
+- [~] Check navigation at intermediate viewport widths — resize-close and wrapping behavior implemented; live visual verification remains
+- [~] Check buttons, cards, forms, galleries, carousels, and footer wrapping — QC overrides added; live visual verification remains
 
 ---
 
@@ -132,6 +138,8 @@ Each image should support:
 - [~] Reject action — implemented
 - [~] Archive action where appropriate — implemented
 - [~] Review, publish, restore/republish actions — implemented
+- [x] Admin page explicitly marked `noindex,nofollow,noarchive`
+- [x] Admin status messaging exposed as an ARIA live status region
 
 Bulk actions:
 
@@ -205,52 +213,59 @@ On approval/publishing:
 
 ## Accessibility
 
-- [ ] Heading hierarchy audit
-- [ ] Keyboard-only navigation audit
-- [ ] Focus-state audit
-- [ ] Color-contrast audit
-- [ ] Alt-text audit
-- [~] Carousel accessibility audit — keyboard controls, focus trapping, accessible controls, captions, alt text, and Escape close implemented; final QC remains
-- [~] Admin preview/modal accessibility — keyboard close and labeled controls implemented; final QC remains
-- [ ] Form accessibility audit
-- [ ] Skip-link verification
+- [~] Heading hierarchy audit — event hierarchy corrected; full page-by-page live audit remains
+- [~] Keyboard-only navigation audit — mobile navigation, gallery, and admin keyboard behavior implemented; live keyboard testing remains
+- [~] Focus-state audit — consistent `:focus-visible` treatment and skip-link focus behavior implemented; live test remains
+- [~] Color-contrast audit — primary green/muted text passed code-level review; Donate orange and footer fine-print contrast corrected; full visual audit remains
+- [~] Alt-text audit — logo/footer treatment normalized and gallery supports media alt text; real client media still pending
+- [~] Carousel accessibility audit — keyboard controls, focus containment, inert background, labeled controls, captions, alt text, counter announcements, and Escape close implemented; live QC remains
+- [~] Admin preview/modal accessibility — keyboard close and labeled controls implemented; final live QC remains
+- [~] Form accessibility audit — form heading, iframe title, direct-form fallback, and mobile sizing added; live embedded-form test remains
+- [~] Skip-link verification — focusable main target and visible focus treatment implemented; live keyboard verification remains
+- [x] Reduced-motion support implemented
+- [x] Forced-colors/high-contrast fallback rules implemented
+- [x] External new-tab links receive accessible labels and safe `noopener noreferrer`
 
 ## SEO and sharing
 
-- [ ] Unique page titles
-- [ ] Meta descriptions
-- [ ] Canonical URL strategy for production domain
-- [ ] Open Graph metadata
-- [ ] Social share image
-- [ ] Favicon/site icons
-- [ ] `sitemap.xml`
-- [ ] `robots.txt`
-- [ ] Structured data where appropriate
+- [x] Unique public page titles
+- [x] Descriptive public meta descriptions
+- [~] Canonical URL strategy for production domain — production canonicals injected for public pages; static-head finalization remains desirable before launch
+- [~] Open Graph metadata — public metadata injected at runtime; static-head finalization remains for social crawlers
+- [~] Social share image — exact VJL logo used as current share image; dedicated 1200×630 launch graphic still pending
+- [x] Favicon/site icon uses the exact VJL logo
+- [x] `sitemap.xml`
+- [x] `robots.txt` with `/admin/` excluded
+- [~] Structured data — verified Organization schema injected on homepage; final static-head validation remains
+- [x] Admin and 404 pages excluded from indexing via meta robots directives
 
 ## Performance
 
-- [ ] Optimize image dimensions and compression
-- [ ] Verify lazy loading
-- [ ] Verify modern image formats
+- [ ] Optimize final client-media dimensions and compression
+- [x] Lazy loading applied to non-hero images and gallery covers
+- [x] Async image decoding enabled where practical
+- [x] Carousel preloads adjacent images
+- [ ] Verify modern image formats — dependent on final image-processing pipeline
 - [ ] Minimize render-blocking resources where practical
-- [ ] Verify caching strategy
-- [ ] Check page weight on mobile
-- [ ] Run Lighthouse-style performance/accessibility review
+- [ ] Verify production caching strategy
+- [ ] Check final page weight on mobile
+- [ ] Run Lighthouse-style performance/accessibility review against deployed release candidate
 
 ## Functional QC
 
-- [ ] Test all internal links on deployed site
-- [ ] Test all external links on deployed site
-- [ ] Test Donate flow
-- [ ] Test Contact form
-- [ ] Test Get Help flow
+- [x] Static internal-link target audit — all referenced public HTML targets exist in repository
+- [~] Test all internal links on deployed site — markup/routing verified; live click-through remains
+- [~] Test all external links on deployed site — URLs normalized; live verification remains
+- [~] Test Donate flow — consistent Stripe destination verified in markup; live transaction-page check remains
+- [~] Test Contact form — embedded form plus direct fallback implemented; live submission test remains
+- [~] Test Get Help flow — routing verified; live click-through remains
 - [~] Test galleries/carousels — implementation complete; deployed visual/interaction QC remains
 - [ ] Test admin workflow end-to-end against live Worker/R2/D1
 - [ ] Test upload → review → approve → publish → archive → republish
 - [ ] Test rejection/quarantine/restore flow
 - [ ] Test guarded permanent-deletion flow after retention period
 - [ ] Test malformed/unsupported image upload handling
-- [~] Test 404 page — page implemented; deployed behavior still needs verification
+- [~] Test 404 page — page implemented and noindex hardened; deployed behavior still needs verification
 - [ ] Check browser console for errors
 - [ ] Check Chrome
 - [ ] Check Edge
