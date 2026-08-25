@@ -24,6 +24,7 @@ class PageParser(HTMLParser):
         self.h1_count = 0
         self.has_nav = False
         self.has_skip = False
+        self.has_qc = False
         self.refs = []
         self.blank_links = []
         self.canonicals = []
@@ -64,6 +65,8 @@ class PageParser(HTMLParser):
                 self.canonicals.append(href)
             if 'icon' in rel:
                 self.icons.append(href)
+            if 'data-vjl-qc' in data and 'stylesheet' in rel:
+                self.has_qc = True
             if href:
                 self.refs.append(('href', href))
 
@@ -130,6 +133,8 @@ def validate_page(name):
         errors.append(f'{name}: missing <nav>')
     if not parser.has_skip:
         errors.append(f'{name}: missing skip link')
+    if not parser.has_qc:
+        errors.append(f'{name}: missing build-time QC stylesheet')
 
     if name in INDEXABLE_PAGES:
         canonical = expected_canonical(name)
@@ -189,6 +194,8 @@ def validate_admin():
     robots = parser.meta.get('robots','').lower()
     if 'noindex' not in robots or 'nofollow' not in robots:
         errors.append('admin/index.html: missing noindex,nofollow robots directive')
+    if not parser.has_qc:
+        errors.append('admin/index.html: missing build-time QC stylesheet')
     for attr, raw in parser.refs:
         target = local_target(ROOT / 'admin/index.html', raw)
         if target is not None and not target.exists():
