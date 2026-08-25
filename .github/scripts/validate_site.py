@@ -28,6 +28,7 @@ ASSET_BUDGETS = {
     'assets/css/admin.css': 12 * 1024,
     'assets/js/site.js': 12 * 1024,
     'assets/js/config.js': 12 * 1024,
+    'assets/js/home-media.js': 8 * 1024,
     'assets/js/gallery.js': 18 * 1024,
     'assets/js/admin.js': 32 * 1024,
 }
@@ -341,7 +342,7 @@ def main():
         'assets/images/placeholders/gallery-3.svg',
         'assets/images/placeholders/gallery-4.svg',
         'assets/css/styles.css','assets/css/qc.css','assets/css/gallery.css','assets/css/admin.css',
-        'assets/js/site.js','assets/js/config.js','assets/js/gallery.js','assets/js/admin.js',
+        'assets/js/site.js','assets/js/config.js','assets/js/home-media.js','assets/js/gallery.js','assets/js/admin.js',
         'robots.txt','sitemap.xml'
     ]
     for rel in required:
