@@ -20,13 +20,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: Restore exact VJL logo
         run: |
-          cat .build-assets/logo-b64-00.txt \
-              .build-assets/logo-b64-01.txt \
-              .build-assets/logo-b64-02.txt \
-              .build-assets/logo-b64-03.txt \
-              .build-assets/logo-b64-04.txt \
-              .build-assets/logo-b64-05.txt \
-              .build-assets/logo-b64-06.txt | base64 -d > assets/images/vjl-logo.png
+          cat .build-assets/vjl-exact-00.b64 \
+              .build-assets/vjl-exact-01.b64 \
+              .build-assets/vjl-exact-02.b64 \
+              .build-assets/vjl-exact-03.b64 \
+              .build-assets/vjl-exact-04.b64 \
+              .build-assets/vjl-exact-05.b64 \
+              .build-assets/vjl-exact-06.b64 \
+              .build-assets/vjl-exact-07.b64 \
+              .build-assets/vjl-exact-08.b64 \
+              .build-assets/vjl-exact-09.b64 \
+              .build-assets/vjl-exact-10.b64 | base64 -d > assets/images/vjl-logo.png
           test "$(wc -c < assets/images/vjl-logo.png)" -eq 32857
           echo "259d6163ff0a2887217a2fd300448aef381fb85cc7df4e479f43738f983b7956  assets/images/vjl-logo.png" | sha256sum -c -
           rm -rf .build-assets
