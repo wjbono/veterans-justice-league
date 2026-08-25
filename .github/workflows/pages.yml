@@ -53,6 +53,7 @@ jobs:
           cp ./*.html _site/
           cp robots.txt sitemap.xml .nojekyll _site/
           cp -R assets admin _site/
+          find _site -type f \( -name '.gitkeep' -o -name '*.b64' -o -name '*.bak' -o -name '*.tmp' \) -delete
           test -f _site/index.html
           test -f _site/assets/images/vjl-logo.png
           test -f _site/admin/index.html
@@ -60,6 +61,7 @@ jobs:
           test ! -e _site/README.md
           test ! -e _site/worker
           test ! -e _site/.github
+          test -z "$(find _site -type f \( -name '.gitkeep' -o -name '*.b64' -o -name '*.bak' -o -name '*.tmp' \) -print -quit)"
       - uses: actions/configure-pages@v5
         with:
           enablement: true
