@@ -2,6 +2,7 @@
 from pathlib import Path
 import html
 import json
+import os
 import re
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -11,7 +12,7 @@ PUBLIC_PAGES = [
     'index.html','about.html','programs.html','housing.html','behind-the-wall.html',
     'outreach.html','gallery.html','events.html','contact.html','team.html'
 ]
-QC_VERSION = '20260824-2026'
+ASSET_VERSION = (os.environ.get('GITHUB_SHA') or 'dev')[:12]
 DEV_FOOTER = '© 2026 Veterans Justice League. Website redesign in development at this temporary GitHub Pages address.'
 PUBLIC_FOOTER = '© 2026 Veterans Justice League.'
 
@@ -41,7 +42,7 @@ def page_metadata(filename, text):
 def build_public_metadata(filename, title, desc, canonical):
     attrs = lambda value: html.escape(value, quote=True)
     pieces = [
-        f'<link rel="stylesheet" data-vjl-qc href="assets/css/qc.css?v={QC_VERSION}">',
+        f'<link rel="stylesheet" data-vjl-qc href="assets/css/qc.css?v={ASSET_VERSION}">',
         f'<link rel="canonical" href="{attrs(canonical)}">',
         '<link rel="icon" type="image/png" href="assets/images/vjl-logo.png">',
         f'<meta property="og:title" content="{attrs(title)}">',
@@ -96,12 +97,65 @@ def clean_public_chrome(text):
     return text.replace(DEV_FOOTER, PUBLIC_FOOTER)
 
 
+def version_local_assets(text):
+    def repl(match):
+        attr, path = match.group(1), match.group(2)
+        return f'{attr}="{path}?v={ASSET_VERSION}"'
+    return re.sub(
+        r'\b(href|src)=["\']((?:\.\./)?assets/(?:css|js)/[^"\'?]+\.(?:css|js))(?:\?[^"\']*)?["\']',
+        repl,
+        text,
+        flags=re.I,
+    )
+
+
+def enhance_accessibility_and_performance(text):
+    # Explicitly associates the mobile-menu control with the controlled navigation.
+    text = re.sub(
+        r'<button class="hamburger"([^>]*?)data-menu-button',
+        lambda m: '<button class="hamburger"' + (
+            m.group(1) if 'aria-controls=' in m.group(1) else m.group(1) + ' aria-controls="mobile-nav" '
+        ) + 'data-menu-button',
+        text,
+        count=1,
+        flags=re.I,
+    )
+    text = re.sub(
+        r'<nav class="mobile-menu"(?![^>]*\bid=)',
+        '<nav class="mobile-menu" id="mobile-nav"',
+        text,
+        count=1,
+        flags=re.I,
+    )
+
+    # Avoid empty image requests before the gallery modal has a selected item.
+    text = re.sub(r'(<img\b[^>]*\bdata-gallery-image\b[^>]*)\s+src=["\']["\']', r'\1', text, flags=re.I)
+
+    # Make image decoding intent static. Hero imagery is high-priority; other content
+    # imagery is lazy unless it is the header/footer logo.
+    def img_repl(match):
+        tag = match.group(0)
+        low = tag.lower()
+        if 'decoding=' not in low:
+            tag = tag[:-1] + ' decoding="async">'
+        if 'hero.svg' in low and 'fetchpriority=' not in low:
+            tag = tag[:-1] + ' fetchpriority="high">'
+        is_logo = 'vjl-logo.png' in low or 'class="logo"' in low or 'class="footer-logo"' in low
+        if not is_logo and 'hero.svg' not in low and 'loading=' not in low and 'data-gallery-image' not in low:
+            tag = tag[:-1] + ' loading="lazy">'
+        return tag
+    text = re.sub(r'<img\b[^>]*>', img_repl, text, flags=re.I)
+    return text
+
+
 def prepare_public_page(filename):
     path = ROOT / filename
     text = strip_generated(path.read_text(encoding='utf-8'))
     text = clean_public_chrome(text)
+    text = enhance_accessibility_and_performance(text)
     title, desc, canonical = page_metadata(filename, text)
     text = insert_before_head_close(text, build_public_metadata(filename, title, desc, canonical))
+    text = version_local_assets(text)
     path.write_text(text, encoding='utf-8')
 
 
@@ -110,12 +164,14 @@ def add_noindex(path, icon_href, qc_href):
     text = re.sub(r'<meta\s+name=["\']robots["\'][^>]*>', '', text, flags=re.I)
     text = re.sub(r'<link\s+rel=["\']icon["\'][^>]*>', '', text, flags=re.I)
     text = re.sub(r'<link\s+[^>]*data-vjl-qc[^>]*>', '', text, flags=re.I)
+    text = enhance_accessibility_and_performance(text)
     markup = (
         '<meta name="robots" content="noindex,nofollow,noarchive">'
         f'<link rel="icon" type="image/png" href="{icon_href}">'
-        f'<link rel="stylesheet" data-vjl-qc href="{qc_href}?v={QC_VERSION}">'
+        f'<link rel="stylesheet" data-vjl-qc href="{qc_href}?v={ASSET_VERSION}">'
     )
     text = insert_before_head_close(text, markup)
+    text = version_local_assets(text)
     path.write_text(text, encoding='utf-8')
 
 
@@ -124,7 +180,7 @@ def main():
         prepare_public_page(filename)
     add_noindex(ROOT / '404.html', 'assets/images/vjl-logo.png', 'assets/css/qc.css')
     add_noindex(ROOT / 'admin/index.html', '../assets/images/vjl-logo.png', '../assets/css/qc.css')
-    print(f'Prepared static launch metadata for {len(PUBLIC_PAGES)} public pages plus noindex pages.')
+    print(f'Prepared static launch metadata and cache-busted assets for {len(PUBLIC_PAGES)} public pages plus noindex pages.')
 
 if __name__ == '__main__':
     main()
