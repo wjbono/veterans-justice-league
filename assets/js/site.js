@@ -33,6 +33,18 @@ if(!inAdmin&&pageFile!=='404.html'){
   let favicon=document.head.querySelector('link[rel="icon"]');if(!favicon){favicon=document.createElement('link');favicon.rel='icon';favicon.type='image/png';favicon.href=ASSET_BASE+'images/vjl-logo.png';document.head.append(favicon)}
 }
 
+// Basic document accessibility normalization.
+const main=document.querySelector('main[id="main"]');
+if(main&&!main.hasAttribute('tabindex'))main.setAttribute('tabindex','-1');
+document.querySelectorAll('.footer-logo').forEach(img=>{img.alt='';img.setAttribute('aria-hidden','true')});
+document.querySelectorAll('a[target="_blank"]').forEach(link=>{
+  link.rel='noopener noreferrer';
+  if(!link.hasAttribute('aria-label')){
+    const text=link.textContent.trim();
+    if(text)link.setAttribute('aria-label',`${text} (opens in a new tab)`);
+  }
+});
+
 const PLACEHOLDER_IMAGES=[
   'images/placeholders/hero.svg',
   'images/placeholders/gallery-1.svg',
