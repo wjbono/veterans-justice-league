@@ -60,11 +60,14 @@
     }
 
     galleries.forEach(gallery=>{
-      const card=document.createElement('button');
-      card.type='button';
-      card.className='gallery-group-card';
+      const available=gallery.items.length>0;
+      const card=document.createElement(available?'button':'div');
+      if(available)card.type='button';
+      card.className='gallery-group-card'+(available?'':' gallery-group-card-empty');
       card.dataset.galleryId=gallery.id;
-      card.setAttribute('aria-label',`Open ${gallery.title} gallery, ${gallery.items.length} photo${gallery.items.length===1?'':'s'}`);
+      if(available){
+        card.setAttribute('aria-label',`Open ${gallery.title} gallery, ${gallery.items.length} photo${gallery.items.length===1?'':'s'}`);
+      }
 
       const image=document.createElement('img');
       image.loading='lazy';
@@ -80,11 +83,13 @@
       description.textContent=gallery.description;
       const count=document.createElement('span');
       count.className='gallery-group-count';
-      count.textContent=`${gallery.items.length} photo${gallery.items.length===1?'':'s'} · Open gallery`;
+      count.textContent=available
+        ? `${gallery.items.length} photo${gallery.items.length===1?'':'s'} · Open gallery`
+        : 'Approved photos coming soon';
 
       body.append(title,description,count);
       card.append(image,body);
-      card.addEventListener('click',()=>openGallery(gallery,0,card));
+      if(available)card.addEventListener('click',()=>openGallery(gallery,0,card));
       grid.append(card);
     });
   }
