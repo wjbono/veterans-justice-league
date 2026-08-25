@@ -1,0 +1,40 @@
+name: Fetch official VJL media for review
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fetch-official-media.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download images currently published on veteransjusticeleague.com
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p official-media
+          curl -fL --retry 3 --retry-delay 2 'https://lh3.googleusercontent.com/sitesv/AG8ngQXq5qfuMmdrxMhZ02veba7bNrTe9sBs5PSJJpLUomfg-QU1p9x6QM2SX07_8o2EC8lEWSehVn6FL7nf6OviEJ1reTFdDL4U6nPG3VZiw8kl5Xr_ZN3EZHmQA4nzkrF-xf7UndwtY5CzvbUBSGHpmVnQg5T3wrZQT_aYtqNy726clwlzJ7Xr4zfsKc2wVLAAAl8Q6638-wTa8vYwm1XjJIt6YGHTkr48jKilkbhzpO4=w1280' -o official-media/home-1
+          curl -fL --retry 3 --retry-delay 2 'https://lh3.googleusercontent.com/sitesv/AG8ngQW2BhJge9Rm0olgkgYPu0aShZ2HD-6R4lksSdWiA1GvcXM2BoT8vAPtHmrmsPBcG04RqSWUoQWnvEJvRLbfDYRbIJPjcySbfCwV1wujcLWnxf5_6tuoTAzfRqKkxjBRDg7dma4chzefcrnwkdsKiav6wx8Ml6e3UzPiDZ2u56b5bWZQX5bzQ-BmIBPWERxNVrQaoY8gh4xdXmz19iSkLpD9arPKMw9NveiYCjM8sWY=w1280' -o official-media/home-2
+          curl -fL --retry 3 --retry-delay 2 'https://lh3.googleusercontent.com/sitesv/AG8ngQWI9LZ10GYciPX3DGwEZ1eiNjuve3GrcMZNgfe1EskLsRoBChg9kXKmiBrW9igasGXfVzmq050Nn17J6N9MzLcXXAB5jRFMZJdsAQO1wvrD4fmSff1m13hJeDaKiT_-fo41uiDfMC9P-uj74crZSMOdeM-fwNy6i1RR8fGH0T1P8WL6TzzCvRTXj78iCaQ4zWlZzrFDZDenBafdNxoOV6zokHHHgE4bZiqQTci81-s=w1280' -o official-media/home-3
+          curl -fL --retry 3 --retry-delay 2 'https://lh3.googleusercontent.com/sitesv/AG8ngQUYiYNrCJX1W1JhwZfp0SIAy8TYkIN9DR-g58KjjlqlRnsU-CTwJ5TA4b5JyGPcq__upcJsQMtKQPPJaXMC8Ibb1TEy37xDUp_EARfzOdeWuzUWfdTWyWZrkRM0h7kb3ISjlIeqw0AbmdA58QDwkVkEREhpQpo8xCLyrUlVhfU0qEljKnreh9kQ1H_gJCyxB4V1R-rBMlNYjfb1qwVbGZzxiCD2CHuPu16Do3kJ=w1280' -o official-media/home-4
+          curl -fL --retry 3 --retry-delay 2 'https://lh3.googleusercontent.com/sitesv/AG8ngQXrU3tASBWjCxWdiOEv3bd350SW3-FIzYhIUhzBvP9FvKhAc1o7jaw3_ki5warWTMTvJ0zu9slOh4x-sD6nsg_j2zoOnZQXX4q6sFC6RAiYjqLZrJ3h-ttX-_GCz_n1hC_sIhMR8QK1C9MzIZ4vASZ8j0BUdnnve9LBaAkEc0fCqt3n_8COWBvmmVDVI2kEZ9eEkJCKZePJTSRTOqPmpd7DFRmp7IofDZcbs50L=w1280' -o official-media/btw-manny-class
+          curl -fL --retry 3 --retry-delay 2 'https://lh3.googleusercontent.com/sitesv/AG8ngQV5UDRwQpvyyobLuqcqzVyceYp_vFDbjfszA556yY1KGPFRSIKtTMrAmugkyxT009xXCk-Ni4iHdT_WEvzaTsQJ2LkzLJsixNyMa8DpVGAZ7wTj8jrEVNX2JgA5879t81vBvWz2s_x9JHJ5EegJGtUPemkKBlsTfN74fcNPBo80m2r2GK9wXF9zMAcShy68RKIy0CiDIytua4jNeA_hntC146ATyU9EokXUweYPwQA=w1280' -o official-media/btw-vjl
+          for f in official-media/*; do
+            mime=$(file -b --mime-type "$f")
+            echo "$f: $mime ($(wc -c < "$f") bytes)"
+            case "$mime" in image/jpeg|image/png|image/webp) ;; *) echo "Unexpected media type: $mime" >&2; exit 1;; esac
+            case "$mime" in
+              image/jpeg) mv "$f" "$f.jpg" ;;
+              image/png) mv "$f" "$f.png" ;;
+              image/webp) mv "$f" "$f.webp" ;;
+            esac
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: official-media-review
+          path: official-media/
+          if-no-files-found: error
+          retention-days: 1
