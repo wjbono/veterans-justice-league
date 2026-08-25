@@ -1,4 +1,5 @@
 import {CATEGORIES,INCOMING,categoryFromKey,fileName,idForKey,validateUpload} from './media-policy.js';
+import {DERIVATIVES,derivativeKey,derivativeUrls} from './derivative-policy.js';
 
 const DEFAULT_GALLERIES=[
   {id:'housing',slug:'housing',title:'VJL Housing',description:'Housing, community activities, and Veteran transition support.',category:'housing',sort_order:10},
@@ -101,8 +102,41 @@ async function syncIncoming(env){
   return {scanned,added,rejected};
 }
 
-function publicUrl(url,id){
-  return `${url.origin}/media/${encodeURIComponent(id)}`;
+async function processDerivatives(env,row){
+  if(!env.IMAGES)throw new Error('IMAGE_BINDING_MISSING');
+  const source=await env.MEDIA.get(row.object_key);
+  if(!source)throw new Error('SOURCE_MISSING');
+  const bytes=await source.arrayBuffer();
+  const created=[];
+  const keys={};
+
+  try{
+    for(const spec of DERIVATIVES){
+      const key=derivativeKey(row.id,spec.name);
+      const output=(
+        await env.IMAGES.input(bytes)
+          .transform({width:spec.width,fit:'scale-down',metadata:'none'})
+          .output({format:'image/webp',quality:spec.quality,anim:false})
+      ).response();
+      if(!output.ok||!output.body)throw new Error('IMAGE_TRANSFORM_FAILED');
+      await env.MEDIA.put(key,output.body,{
+        httpMetadata:{contentType:'image/webp',cacheControl:'public, max-age=31536000, immutable'}
+      });
+      created.push(key);
+      keys[spec.field]=key;
+    }
+  }catch(error){
+    for(const key of created){
+      try{await env.MEDIA.delete(key);}catch(cleanupError){}
+    }
+    if(String(error&&error.message||error)==='IMAGE_TRANSFORM_FAILED')throw error;
+    throw new Error('IMAGE_TRANSFORM_FAILED');
+  }
+
+  await env.DB.prepare(`
+    UPDATE media SET thumb_key=?,web_key=?,large_key=?,updated_at=CURRENT_TIMESTAMP WHERE id=?
+  `).bind(keys.thumb_key,keys.web_key,keys.large_key,row.id).run();
+  return keys;
 }
 
 async function listPublic(env,url){
@@ -118,7 +152,7 @@ async function listPublic(env,url){
   query+=' ORDER BY featured DESC, COALESCE(published_at,uploaded_at) DESC LIMIT ?';
   values.push(limit);
   const result=await env.DB.prepare(query).bind(...values).all();
-  const items=(result.results||[]).map(item=>({...item,featured:!!item.featured,public_url:publicUrl(url,item.id)}));
+  const items=(result.results||[]).map(item=>({...item,featured:!!item.featured,...derivativeUrls(url.origin,item.id)}));
   return json({items});
 }
 
@@ -158,12 +192,12 @@ async function listGalleries(env,url){
     const items=(media.results||[]).map(item=>({
       ...item,
       featured:!!item.featured,
-      public_url:publicUrl(url,item.id)
+      ...derivativeUrls(url.origin,item.id)
     }));
     const coverItem=items.find(item=>item.id===gallery.cover_media_id)||items[0]||null;
     output.push({
       ...gallery,
-      cover_url:coverItem?coverItem.public_url:null,
+      cover_url:coverItem?coverItem.thumb_url:null,
       items
     });
   }
@@ -181,22 +215,30 @@ async function listAdmin(env,url){
   const items=(result.results||[]).map(item=>({
     ...item,
     featured:!!item.featured,
-    preview_url:`${url.origin}/media/${encodeURIComponent(item.id)}?admin=1`
+    preview_url:`${url.origin}/media/${encodeURIComponent(item.id)}?admin=1&size=thumb`
   }));
   return json({items});
 }
 
-async function serveMedia(env,id,adminAccess){
+async function serveMedia(env,id,adminAccess,size='web'){
   const row=await env.DB.prepare('SELECT * FROM media WHERE id=?').bind(id).first();
   if(!row)return new Response('Not found',{status:404});
   if(row.status!=='published'&&!adminAccess)return new Response('Not found',{status:404});
-  const key=row.web_key||row.large_key||row.object_key;
+
+  let key;
+  if(size==='thumb')key=row.thumb_key||row.web_key||row.large_key||row.object_key;
+  else if(size==='large')key=row.large_key||row.web_key||row.thumb_key||row.object_key;
+  else if(size==='web')key=row.web_key||row.large_key||row.thumb_key||row.object_key;
+  else if(size==='original'&&adminAccess)key=row.object_key;
+  else return new Response('Not found',{status:404});
+
   const object=await env.MEDIA.get(key);
   if(!object)return new Response('Not found',{status:404});
   const headers=new Headers();
   object.writeHttpMetadata(headers);
   headers.set('etag',object.httpEtag);
-  headers.set('cache-control',row.status==='published'?'public, max-age=3600':'private, no-store');
+  const derivative=key!==row.object_key;
+  headers.set('cache-control',row.status==='published'?(derivative?'public, max-age=31536000, immutable':'public, max-age=3600'):'private, no-store');
   return new Response(object.body,{headers});
 }
 
@@ -219,7 +261,20 @@ async function updateMetadata(env,id,fields,reviewer){
   `).bind(fields.category,fields.gallery,fields.caption,fields.alt_text,fields.featured?1:0,reviewer,id).run();
 }
 
+function assertTransition(row,action){
+  const allowed={
+    review:new Set(['pending']),
+    approve:new Set(['pending','review']),
+    publish:new Set(['approved']),
+    reject:new Set(['pending','review']),
+    archive:new Set(['published']),
+    restore:new Set(['archived','rejected'])
+  };
+  if(allowed[action]&&!allowed[action].has(row.status))throw new Error('INVALID_TRANSITION');
+}
+
 async function transition(env,row,action,fields,actor,body={}){
+  assertTransition(row,action);
   const now=new Date().toISOString();
   let next=row.status;
   let trashDeleteAfter=row.trash_delete_after||null;
@@ -237,7 +292,14 @@ async function transition(env,row,action,fields,actor,body={}){
     if(!object)throw new Error('SOURCE_MISSING');
     next='processing';
     await env.DB.prepare(`UPDATE media SET status='processing',updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(row.id).run();
-    await history(env,row.id,'processing',row.status,'processing',actor,{note:'Derivative processing hook reached. Original media remains the delivery fallback until optimized derivatives are configured.'});
+    await history(env,row.id,'processing',row.status,'processing',actor,{note:'Generating thumbnail, web, and lightbox WebP derivatives from the retained R2 original.'});
+    try{
+      await processDerivatives(env,row);
+    }catch(error){
+      await env.DB.prepare(`UPDATE media SET status='approved',updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(row.id).run();
+      await history(env,row.id,'processing_failed','processing','approved',actor,{code:String(error&&error.message||error)});
+      throw error;
+    }
     next='published';
   }
   if(action==='reject'){
@@ -288,8 +350,11 @@ function errorResponse(error,headers={}){
   const mapping={
     INVALID_CATEGORY:[400,'Invalid category.'],
     INVALID_UPLOAD:[409,'This media item failed ingestion validation and cannot be approved or published until the source object is replaced with a supported image and synchronized again.'],
+    INVALID_TRANSITION:[409,'That media lifecycle action is not valid from the current status.'],
     CATEGORY_REQUIRED:[400,'Category is required before approval or publishing.'],
     SOURCE_MISSING:[409,'The source object is missing from R2.'],
+    IMAGE_BINDING_MISSING:[503,'Image processing is not configured. Bind Cloudflare Images to the Worker before publishing media.'],
+    IMAGE_TRANSFORM_FAILED:[422,'Cloudflare could not generate the required image derivatives. The item remains approved and is not public.'],
     DELETE_REQUIRES_REJECTED:[409,'Only rejected media can be permanently deleted.'],
     DELETE_CONFIRMATION_REQUIRED:[400,'Permanent deletion requires confirm="DELETE".'],
     RETENTION_NOT_EXPIRED:[409,'The rejection retention period has not expired.']
@@ -369,7 +434,8 @@ export default{
 
       if(url.pathname.startsWith('/media/')&&req.method==='GET'){
         const adminAccess=url.searchParams.get('admin')==='1'&&auth(env,req);
-        const response=await serveMedia(env,decodeURIComponent(url.pathname.slice(7)),adminAccess);
+        const size=url.searchParams.get('size')||'web';
+        const response=await serveMedia(env,decodeURIComponent(url.pathname.slice(7)),adminAccess,size);
         Object.entries(corsHeaders).forEach(([key,value])=>response.headers.set(key,value));
         return response;
       }
