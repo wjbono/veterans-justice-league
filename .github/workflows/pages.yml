@@ -104,3 +104,31 @@ jobs:
           code="$(curl --silent --show-error --location --output /tmp/vjl-404.html --write-out '%{http_code}' "$missing")"
           test "$code" = '404'
           grep -q 'Page Not Found' /tmp/vjl-404.html
+      - name: Render deployed site in headless Chrome
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$chrome"
+          base="${PAGE_URL%/}/"
+          mkdir -p /tmp/vjl-browser-qc
+          "$chrome" --headless --no-sandbox --disable-gpu --hide-scrollbars --virtual-time-budget=3000 --dump-dom "${base}" > /tmp/vjl-browser-qc/home-dom.html
+          grep -q 'Support, Housing &amp; Advocacy' /tmp/vjl-browser-qc/home-dom.html
+          "$chrome" --headless --no-sandbox --disable-gpu --hide-scrollbars --virtual-time-budget=3000 --dump-dom "${base}gallery.html" > /tmp/vjl-browser-qc/gallery-dom.html
+          grep -q 'VJL Housing' /tmp/vjl-browser-qc/gallery-dom.html
+          grep -q 'Behind-the-Wall Training' /tmp/vjl-browser-qc/gallery-dom.html
+          grep -q 'Outreach' /tmp/vjl-browser-qc/gallery-dom.html
+          "$chrome" --headless --no-sandbox --disable-gpu --hide-scrollbars --virtual-time-budget=3000 --window-size=1440,1200 --screenshot=/tmp/vjl-browser-qc/desktop-home.png "${base}"
+          "$chrome" --headless --no-sandbox --disable-gpu --hide-scrollbars --virtual-time-budget=3000 --window-size=1440,1200 --screenshot=/tmp/vjl-browser-qc/desktop-gallery.png "${base}gallery.html"
+          "$chrome" --headless --no-sandbox --disable-gpu --hide-scrollbars --virtual-time-budget=3000 --window-size=390,844 --screenshot=/tmp/vjl-browser-qc/mobile-home.png "${base}"
+          "$chrome" --headless --no-sandbox --disable-gpu --hide-scrollbars --virtual-time-budget=3000 --window-size=390,844 --screenshot=/tmp/vjl-browser-qc/mobile-gallery.png "${base}gallery.html"
+          "$chrome" --headless --no-sandbox --disable-gpu --hide-scrollbars --virtual-time-budget=3000 --window-size=390,844 --screenshot=/tmp/vjl-browser-qc/mobile-contact.png "${base}contact.html"
+      - name: Upload browser QC screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-qc-${{ github.run_number }}
+          path: /tmp/vjl-browser-qc/*.png
+          retention-days: 1
+          if-no-files-found: error
