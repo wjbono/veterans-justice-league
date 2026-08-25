@@ -8,30 +8,7 @@ qcStyles.rel='stylesheet';
 qcStyles.href=ASSET_BASE+'css/qc.css?v=20260824-2026';
 document.head.append(qcStyles);
 
-// Shared launch metadata for public pages. Canonicals point to the intended production domain so the temporary GitHub Pages preview is not treated as authoritative.
-if(!inAdmin&&pageFile!=='404.html'){
-  const PROD_BASE='https://www.veteransjusticeleague.com';
-  const PREVIEW_IMAGE='https://wjbono.github.io/veterans-justice-league/assets/images/vjl-logo.png';
-  const canonicalPath=pageFile==='index.html'?'/':'/'+pageFile;
-  function upsertMeta(selector,attrs){let el=document.head.querySelector(selector);if(!el){el=document.createElement('meta');document.head.append(el)}Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));return el}
-  let canonical=document.head.querySelector('link[rel="canonical"]');if(!canonical){canonical=document.createElement('link');canonical.rel='canonical';document.head.append(canonical)}canonical.href=PROD_BASE+canonicalPath;
-  const desc=document.head.querySelector('meta[name="description"]')?.content||'Veterans Justice League supports justice-involved Veterans through housing, advocacy, outreach, and prevention work with active-duty service members.';
-  upsertMeta('meta[property="og:title"]',{property:'og:title',content:document.title});
-  upsertMeta('meta[property="og:description"]',{property:'og:description',content:desc});
-  upsertMeta('meta[property="og:type"]',{property:'og:type',content:'website'});
-  upsertMeta('meta[property="og:url"]',{property:'og:url',content:PROD_BASE+canonicalPath});
-  upsertMeta('meta[property="og:image"]',{property:'og:image',content:PREVIEW_IMAGE});
-  upsertMeta('meta[property="og:site_name"]',{property:'og:site_name',content:'Veterans Justice League'});
-  upsertMeta('meta[name="twitter:card"]',{name:'twitter:card',content:'summary_large_image'});
-  upsertMeta('meta[name="twitter:title"]',{name:'twitter:title',content:document.title});
-  upsertMeta('meta[name="twitter:description"]',{name:'twitter:description',content:desc});
-  upsertMeta('meta[name="twitter:image"]',{name:'twitter:image',content:PREVIEW_IMAGE});
-  upsertMeta('meta[name="theme-color"]',{name:'theme-color',content:'#3b7d23'});
-  let favicon=document.head.querySelector('link[rel="icon"]');if(!favicon){favicon=document.createElement('link');favicon.rel='icon';favicon.type='image/png';favicon.href=ASSET_BASE+'images/vjl-logo.png';document.head.append(favicon)}
-  if(pageFile==='index.html'&&!document.getElementById('vjl-org-schema')){const s=document.createElement('script');s.id='vjl-org-schema';s.type='application/ld+json';s.textContent=JSON.stringify({'@context':'https://schema.org','@type':'Organization',name:'Veterans Justice League',url:PROD_BASE+'/',logo:PROD_BASE+'/assets/images/vjl-logo.png',telephone:'+1-719-306-8947',address:{'@type':'PostalAddress',streetAddress:'3617 Betty Dr. STE G',addressLocality:'Colorado Springs',addressRegion:'CO',postalCode:'80917',addressCountry:'US'}});document.head.append(s)}
-}else{
-  let favicon=document.head.querySelector('link[rel="icon"]');if(!favicon){favicon=document.createElement('link');favicon.rel='icon';favicon.type='image/png';favicon.href=ASSET_BASE+'images/vjl-logo.png';document.head.append(favicon)}
-}
+// SEO/social metadata is generated statically during the Pages build so crawlers do not depend on JavaScript.
 
 // Basic document accessibility normalization.
 const main=document.querySelector('main[id="main"]');
