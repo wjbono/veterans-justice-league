@@ -9,14 +9,16 @@ Purpose: make the final move from the current Google Sites production site to th
 ## Production targets
 
 - Production domain: `veteransjusticeleague.com`
-- Recommended canonical hostname: `veteransjusticeleague.com`
-- `www` hostname: configure to GitHub Pages so GitHub can redirect it to the canonical apex hostname
+- Canonical hostname: `www.veteransjusticeleague.com`
+- Apex hostname: `veteransjusticeleague.com`, configured to GitHub Pages so GitHub redirects it to `www`
 - GitHub repository: `wjbono/veterans-justice-league`
 - Current temporary preview: `https://wjbono.github.io/veterans-justice-league/`
-- GitHub Pages DNS target for subdomains: `wjbono.github.io`
+- GitHub Pages DNS target for `www`: `wjbono.github.io`
 - Cloudflare Worker/API: production URL to be recorded here after deployment
 - R2 bucket: production name to be recorded here after creation
 - D1 database: production name/id to be recorded here after creation
+
+The `www` canonical choice is deliberate: it matches the site's current `PROD_BASE` configuration and GitHub recommends using a `www` subdomain even when the apex is also configured.
 
 ## Launch blockers that must be cleared first
 
@@ -74,9 +76,11 @@ Do not remove unrelated mail, SPF, DKIM, DMARC, MX, verification, or other servi
 Before pointing DNS at GitHub:
 
 - Repository → **Settings → Pages**.
-- Set custom domain to `veteransjusticeleague.com`.
+- Set custom domain to `www.veteransjusticeleague.com`.
 - Save it.
 - This repository deploys with a custom GitHub Actions workflow, so a repository `CNAME` file is not required and GitHub ignores one for this deployment model.
+
+With both the apex GitHub DNS records and the `www` CNAME configured, GitHub Pages should redirect the apex hostname to the configured `www` canonical hostname.
 
 ### 4. Check CAA records
 
@@ -108,7 +112,7 @@ GitHub's current documented apex IPv6 addresses are:
 | AAAA | `@` | `2606:50c0:8002::153` |
 | AAAA | `@` | `2606:50c0:8003::153` |
 
-For `www`:
+For the canonical `www` hostname:
 
 | Type | Name | Value |
 | --- | --- | --- |
@@ -120,7 +124,7 @@ At launch time, re-check GitHub's official documentation before applying these v
 
 For the initial GitHub Pages domain verification and certificate-provisioning stage, use **DNS Only** for the GitHub web-routing records. This keeps GitHub's DNS/HTTPS validation path as direct and diagnosable as possible.
 
-After GitHub Pages is serving the production domain correctly over HTTPS, Cloudflare proxying can be evaluated separately. Do not make proxying part of the same change required to establish the initial GitHub Pages route.
+After GitHub Pages is serving both hostnames correctly over HTTPS, Cloudflare proxying can be evaluated separately. Do not make proxying part of the same change required to establish the initial GitHub Pages route.
 
 ## Cutover procedure
 
@@ -129,7 +133,7 @@ Execute only after explicit client launch approval.
 1. Confirm the latest `main` deployment is successful and its live Pages smoke test passed.
 2. Confirm the Worker/API, D1, R2, galleries, admin workflow, Donate, and Contact/Get Help are healthy.
 3. Record the current production DNS values in **Rollback Records** below.
-4. Confirm GitHub Pages has `veteransjusticeleague.com` configured as its custom domain.
+4. Confirm GitHub Pages has `www.veteransjusticeleague.com` configured as its custom domain.
 5. Replace only the existing website-routing apex records with the current GitHub Pages apex records.
 6. Point `www` to `wjbono.github.io` with a CNAME.
 7. Leave unrelated DNS records untouched.
@@ -146,11 +150,11 @@ GitHub notes that DNS changes may take up to 24 hours to propagate and HTTPS ava
 
 ### DNS / TLS
 
-- [ ] `veteransjusticeleague.com` resolves to the intended GitHub Pages route.
-- [ ] `www.veteransjusticeleague.com` resolves correctly.
-- [ ] Apex loads the replacement site.
-- [ ] `www` redirects to the canonical apex hostname.
-- [ ] HTTPS certificate is valid for the production hostname.
+- [ ] `www.veteransjusticeleague.com` resolves to the intended GitHub Pages route.
+- [ ] `veteransjusticeleague.com` resolves to the intended GitHub Pages apex route.
+- [ ] `www` loads the replacement site as the canonical hostname.
+- [ ] Apex redirects to `www`.
+- [ ] HTTPS certificate is valid for both hostnames.
 - [ ] HTTP redirects to HTTPS after enforcement is enabled.
 - [ ] No mixed-content warnings appear.
 
@@ -187,21 +191,29 @@ GitHub notes that DNS changes may take up to 24 hours to propagate and HTTPS ava
 
 - [ ] Browser console has no launch-blocking errors.
 - [ ] Network panel has no unexpected 4xx/5xx responses.
-- [ ] Canonical tags use `https://www.veteransjusticeleague.com` or `https://veteransjusticeleague.com` consistently with the selected canonical hostname. **Current build is configured for the apex domain `https://www.veteransjusticeleague.com`? Review before launch and correct if necessary.**
+- [ ] Canonical tags use `https://www.veteransjusticeleague.com`.
+- [ ] Homepage Organization structured data uses `https://www.veteransjusticeleague.com/`.
+- [ ] Sitemap URLs use the `www` canonical hostname.
+- [ ] Worker allowed origins include `https://www.veteransjusticeleague.com` and any deliberately supported alternate origin.
 - [ ] Open Graph/Twitter URLs and image resolve over HTTPS.
 - [ ] `robots.txt` is reachable.
 - [ ] `sitemap.xml` is reachable.
 - [ ] `/admin/` remains `noindex,nofollow,noarchive`.
 
-## Important canonical-hostname check
+## Canonical-hostname decision
 
-The current site build uses `https://www.veteransjusticeleague.com` only where explicitly configured in code? Before the release candidate is frozen, inspect `PROD_BASE` in `.github/scripts/prepare_site.py` and choose one canonical hostname deliberately:
+**Locked launch plan: `https://www.veteransjusticeleague.com` is canonical.**
 
-- Preferred plan: `https://www.veteransjusticeleague.com` **or** `https://veteransjusticeleague.com`
-- GitHub can redirect between apex and `www` when both DNS configurations are correct.
-- The canonical URL, structured-data URL, sitemap, and Worker allowed-origin list must all agree with the chosen hostname.
+This matches the current `PROD_BASE` value in `.github/scripts/prepare_site.py`. Keep the following aligned with it:
 
-Do not leave this as an accidental default.
+- GitHub Pages custom domain
+- canonical tags
+- Open Graph URLs
+- structured-data organization URL
+- sitemap URLs
+- Worker production allowed-origin configuration
+
+The apex `https://veteransjusticeleague.com` should redirect to the canonical `www` hostname through GitHub Pages once both DNS configurations are correct.
 
 ## Rollback triggers
 
