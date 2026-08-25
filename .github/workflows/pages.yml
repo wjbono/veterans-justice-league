@@ -41,6 +41,8 @@ jobs:
           node --check assets/js/gallery.js
           node --check assets/js/admin.js
           node --check worker/src/index.js
+      - name: Prepare production assets
+        run: python3 .github/scripts/prepare_assets.py
       - name: Prepare static launch metadata
         run: python3 .github/scripts/prepare_site.py
       - name: Validate production cleanliness
