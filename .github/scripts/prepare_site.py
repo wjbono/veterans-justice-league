@@ -26,8 +26,8 @@ def insert_before_head_close(text, markup):
 
 
 def page_metadata(filename, text):
-    title = first(r'<title>(.*?)</title>', text, re.I | re.S)
-    desc = first(r'<meta\s+name=["\']description["\']\s+content=["\'](.*?)["\']\s*/?>', text, re.I | re.S)
+    title = html.unescape(first(r'<title>(.*?)</title>', text, re.I | re.S))
+    desc = html.unescape(first(r'<meta\s+name=["\']description["\']\s+content=["\'](.*?)["\']\s*/?>', text, re.I | re.S))
     if not title or not desc:
         raise ValueError(f'{filename}: title/description missing before metadata build')
     canonical_path = '/' if filename == 'index.html' else '/' + filename
