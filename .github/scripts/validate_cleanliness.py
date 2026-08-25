@@ -17,6 +17,7 @@ FORBIDDEN = {
     'https://localhost': 'localhost URL',
     '127.0.0.1': 'loopback URL',
     'file://': 'local file URL',
+    'fonts.googleapis.com': 'external Google Fonts dependency',
     'website redesign in development at this temporary github pages address.': 'temporary development footer',
 }
 
