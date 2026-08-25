@@ -8,7 +8,7 @@ export const INCOMING=[
   'incoming/partners/',
   'incoming/unsorted/'
 ];
-export const MAX_UPLOAD_BYTES=25*1024*1024;
+export const MAX_UPLOAD_BYTES=20*1024*1024;
 
 const EXTENSION_TYPES=new Map([
   ['jpg','image/jpeg'],['jpeg','image/jpeg'],
