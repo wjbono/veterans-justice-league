@@ -17,12 +17,13 @@ Goal: bring the replacement Veterans Justice League website to a state where the
 - [x] GitHub Pages deployment workflow created
 - [x] Temporary GitHub Pages site deployed
 - [x] Existing production Google Sites deployment left untouched
-- [x] Core public pages created: Home, About, Housing, Behind-the-Wall Training, Outreach, Gallery, Events, Contact, Team
+- [x] Core public pages created: Home, About, Programs, Housing, Behind-the-Wall Training, Outreach, Gallery, Events, Contact, Team
 - [x] Initial responsive styling implemented
 - [x] Exact VJL logo stored locally in the repository
 - [x] Local placeholder imagery added so preview does not depend on broken external hotlinks
 - [x] Initial Cloudflare Worker/D1/R2 backend scaffold added under `worker/`
 - [x] Initial media-review/admin shell added under `/admin/`
+- [x] Custom `404.html` created for GitHub Pages
 
 ---
 
@@ -30,14 +31,15 @@ Goal: bring the replacement Veterans Justice League website to a state where the
 
 ## Navigation and page behavior
 
-- [ ] Audit every desktop navigation link
-- [ ] Audit every mobile navigation link
-- [ ] Verify all buttons and CTAs
-- [ ] Verify Donate links
-- [ ] Verify Contact/Get Help links
-- [ ] Add appropriate empty states where content is not yet available
-- [ ] Confirm Team page behavior while bios are unavailable
-- [ ] Confirm Events page behavior when no current events are published
+- [x] Audit every desktop navigation link
+- [x] Audit every mobile navigation link
+- [x] Verify all buttons and CTAs at the markup/routing level
+- [x] Verify Donate links consistently target the published Stripe donation URL
+- [x] Verify Contact/Get Help links route to the Contact page
+- [x] Add appropriate empty states where content is not yet available
+- [x] Confirm Team page behavior while bios are unavailable
+- [x] Confirm Events page behavior when no current events are published
+- [x] Add dedicated Programs landing page so the Programs navigation item no longer routes directly to Housing
 
 ## Gallery experience
 
@@ -50,7 +52,7 @@ Goal: bring the replacement Veterans Justice League website to a state where the
 - [x] Add touch/swipe-friendly behavior for mobile
 - [x] Display captions where available
 - [x] Display accessible alt text
-- [~] Support gallery/event assignment from media metadata rather than hardcoded HTML — frontend now accepts grouped API data; final metadata source depends on Phase 2/3 backend connection
+- [~] Support gallery/event assignment from media metadata rather than hardcoded HTML — frontend and Worker API now support grouped metadata; live D1 connection still pending
 - [x] Keep homepage Recent Moments as a small preview linking into the full gallery experience
 
 ## Responsive behavior
@@ -59,13 +61,13 @@ Goal: bring the replacement Veterans Justice League website to a state where the
 - [ ] Full tablet visual pass
 - [ ] Full mobile visual pass
 - [ ] Check navigation at intermediate viewport widths
-- [~] Check buttons, cards, forms, galleries, carousels, and footer wrapping — gallery/carousel responsive behavior implemented; full-site pass remains
+- [~] Check buttons, cards, forms, galleries, carousels, and footer wrapping — gallery/carousel and admin responsive behavior implemented; full-site pass remains
 
 ---
 
 # Phase 2: Complete the Cloudflare Media and Admin System
 
-Status: [!] Requires manual Cloudflare account setup because the ChatGPT Cloudflare integration is not usable.
+Status: [!] Requires manual Cloudflare account setup because the ChatGPT Cloudflare integration is not usable. Application code can continue to be completed before deployment.
 
 ## Cloudflare resources
 
@@ -82,62 +84,73 @@ Status: [!] Requires manual Cloudflare account setup because the ChatGPT Cloudfl
 
 Implement and verify the locked folder model:
 
-- [ ] `incoming/housing/`
-- [ ] `incoming/behind-the-wall/`
-- [ ] `incoming/outreach/`
-- [ ] `incoming/events/`
-- [ ] `incoming/team/`
-- [ ] `incoming/partners/`
-- [ ] `incoming/unsorted/`
-- [ ] Category-specific folders pre-populate category
-- [ ] Reviewer can change category
-- [ ] Unsorted uploads begin uncategorized
-- [ ] Unsorted media cannot be approved until category is assigned
+- [~] `incoming/housing/` — Worker prefix support implemented; live R2 verification pending
+- [~] `incoming/behind-the-wall/` — Worker prefix support implemented; live R2 verification pending
+- [~] `incoming/outreach/` — Worker prefix support implemented; live R2 verification pending
+- [~] `incoming/events/` — Worker prefix support implemented; live R2 verification pending
+- [~] `incoming/team/` — Worker prefix support implemented; live R2 verification pending
+- [~] `incoming/partners/` — Worker prefix support implemented; live R2 verification pending
+- [~] `incoming/unsorted/` — Worker prefix support implemented; live R2 verification pending
+- [~] Category-specific folders pre-populate category — implemented in Worker sync; live verification pending
+- [~] Reviewer can change category — implemented in admin UI/API; live verification pending
+- [~] Unsorted uploads begin uncategorized — implemented in Worker sync; live verification pending
+- [~] Unsorted media cannot be approved until category is assigned — enforced by API; live verification pending
 
 ## Media lifecycle
 
 Implement and verify:
 
-- [ ] UPLOAD
-- [ ] PENDING
-- [ ] REVIEW
-- [ ] APPROVED
-- [ ] PROCESSING
-- [ ] PUBLISHED
-- [ ] ARCHIVED
-- [ ] REJECTED
-- [ ] Rejected media moves to trash/quarantine instead of immediate deletion
-- [ ] Retention period supported before permanent deletion
-- [ ] Second safeguard/confirmation before permanent deletion
-- [ ] Archived media can be restored/republished
-- [ ] D1 retains metadata/history
+- [~] UPLOAD — represented by R2 object arrival before sync; live verification pending
+- [~] PENDING — implemented
+- [~] REVIEW — implemented
+- [~] APPROVED — implemented
+- [~] PROCESSING — implemented as lifecycle hook; real derivative processing remains incomplete
+- [~] PUBLISHED — implemented
+- [~] ARCHIVED — implemented
+- [~] REJECTED — implemented
+- [~] Rejected media moves to trash/quarantine instead of immediate deletion — rejected state + retention metadata implemented
+- [~] Retention period supported before permanent deletion — 30-day retention implemented
+- [~] Second safeguard/confirmation before permanent deletion — explicit authenticated `confirm="DELETE"` requirement implemented; not available in bulk actions
+- [~] Archived media can be restored/republished — implemented
+- [~] D1 retains metadata/history — schema and history writes implemented
 
 ## Media review/admin interface
 
 Each image should support:
 
-- [ ] Thumbnail preview
-- [ ] Larger preview
-- [ ] Filename
-- [ ] Upload date
-- [ ] EXIF/photo date when available
-- [ ] Category dropdown
-- [ ] Caption
-- [ ] Alt text
-- [ ] Optional event/gallery assignment
-- [ ] Featured-image toggle
-- [ ] Approve action
-- [ ] Reject action
-- [ ] Archive action where appropriate
+- [~] Thumbnail preview — authenticated preview loading implemented; live R2 verification pending
+- [~] Larger preview — modal preview implemented; live R2 verification pending
+- [~] Filename — implemented
+- [~] Upload date — implemented
+- [~] EXIF/photo date when available — display field implemented; extraction/population still pending image-processing work
+- [~] Category dropdown — implemented
+- [~] Caption — implemented
+- [~] Alt text — implemented
+- [~] Optional event/gallery assignment — implemented
+- [~] Featured-image toggle — implemented
+- [~] Approve action — implemented
+- [~] Reject action — implemented
+- [~] Archive action where appropriate — implemented
+- [~] Review, publish, restore/republish actions — implemented
 
 Bulk actions:
 
-- [ ] Bulk select
-- [ ] Bulk category assignment
-- [ ] Bulk gallery assignment
-- [ ] Bulk approve
-- [ ] Bulk reject
-- [ ] Bulk archive where appropriate
+- [~] Bulk select — implemented
+- [~] Bulk category assignment — implemented
+- [~] Bulk gallery assignment — implemented
+- [~] Bulk approve — implemented
+- [~] Bulk publish — implemented
+- [~] Bulk reject — implemented
+- [~] Bulk archive where appropriate — implemented
+
+## Gallery metadata/API
+
+- [~] D1 `galleries` table implemented
+- [~] Default gallery definitions implemented and seedable from admin UI/API
+- [~] Public `GET /api/galleries` endpoint implemented
+- [~] Public media filtering by category/gallery implemented
+- [~] Admin gallery listing/seed endpoints implemented
+- [ ] Live D1 gallery metadata verification
 
 ## Image processing
 
@@ -151,8 +164,8 @@ On approval/publishing:
 - [ ] Generate normal web-size derivative
 - [ ] Generate larger/lightbox derivative
 - [ ] Generate WebP and/or AVIF where appropriate
-- [ ] Retain original in R2
-- [ ] Store object keys and derivative keys in D1
+- [x] Retain original in R2 by design
+- [~] Store object keys and derivative keys in D1 — schema supports all keys; derivative generation still pending
 
 ---
 
@@ -162,11 +175,11 @@ On approval/publishing:
 - [ ] Homepage Recent Moments pulls approved/published featured/recent images dynamically
 - [~] Gallery landing page pulls gallery definitions dynamically — API consumption implemented; awaiting live Worker/D1 data
 - [~] Individual gallery collections pull published media dynamically — API consumption implemented; awaiting live Worker/D1 data
-- [ ] Only `PUBLISHED` media is publicly displayed
-- [ ] Archived/rejected/pending media never appears publicly
-- [ ] Verify category filters
-- [ ] Verify gallery/event filters
-- [ ] Verify featured-image behavior
+- [~] Only `PUBLISHED` media is publicly displayed — enforced in Worker public API; live verification pending
+- [~] Archived/rejected/pending media never appears publicly — enforced in Worker public API; live verification pending
+- [~] Verify category filters — API supports category filter; live verification pending
+- [~] Verify gallery/event filters — API supports gallery filter; live verification pending
+- [~] Verify featured-image behavior — sorting/metadata support implemented; live verification pending
 - [ ] Verify public URLs and caching
 - [x] Verify graceful API-unavailable state — local grouped gallery preview remains usable without the backend
 
@@ -198,6 +211,7 @@ On approval/publishing:
 - [ ] Color-contrast audit
 - [ ] Alt-text audit
 - [~] Carousel accessibility audit — keyboard controls, focus trapping, accessible controls, captions, alt text, and Escape close implemented; final QC remains
+- [~] Admin preview/modal accessibility — keyboard close and labeled controls implemented; final QC remains
 - [ ] Form accessibility audit
 - [ ] Skip-link verification
 
@@ -225,17 +239,18 @@ On approval/publishing:
 
 ## Functional QC
 
-- [ ] Test all internal links
-- [ ] Test all external links
+- [ ] Test all internal links on deployed site
+- [ ] Test all external links on deployed site
 - [ ] Test Donate flow
 - [ ] Test Contact form
 - [ ] Test Get Help flow
 - [~] Test galleries/carousels — implementation complete; deployed visual/interaction QC remains
-- [ ] Test admin workflow end-to-end
-- [ ] Test upload → review → publish → archive → republish
-- [ ] Test rejection/quarantine flow
+- [ ] Test admin workflow end-to-end against live Worker/R2/D1
+- [ ] Test upload → review → approve → publish → archive → republish
+- [ ] Test rejection/quarantine/restore flow
+- [ ] Test guarded permanent-deletion flow after retention period
 - [ ] Test malformed/unsupported image upload handling
-- [ ] Test 404 page
+- [~] Test 404 page — page implemented; deployed behavior still needs verification
 - [ ] Check browser console for errors
 - [ ] Check Chrome
 - [ ] Check Edge
@@ -248,7 +263,7 @@ On approval/publishing:
 - [ ] Remove debug/test content
 - [ ] Remove temporary placeholder labels once real images are loaded
 - [ ] Remove unused assets/scripts/styles
-- [ ] Confirm README/deployment documentation matches final architecture
+- [~] Confirm README/deployment documentation matches final architecture — Worker documentation updated; final release documentation remains
 
 ---
 
