@@ -45,7 +45,7 @@
     const common='<button class="secondary" data-action="save">Save</button>';
     if(item.status==='pending')return common+'<button data-action="review">Start review</button><button class="primary" data-action="approve">Approve</button><button class="danger" data-action="reject">Reject</button>';
     if(item.status==='review')return common+'<button class="primary" data-action="approve">Approve</button><button class="danger" data-action="reject">Reject</button>';
-    if(item.status==='approved')return common+'<button data-action="publish">Publish</button><button class="secondary" data-action="archive">Archive</button>';
+    if(item.status==='approved')return common+'<button data-action="publish">Publish</button>';
     if(item.status==='published')return common+'<button class="secondary" data-action="archive">Archive</button>';
     if(item.status==='archived')return common+'<button data-action="restore">Republish</button>';
     if(item.status==='rejected')return common+'<button data-action="restore">Restore to pending</button>';
