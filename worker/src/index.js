@@ -1,13 +1,5 @@
-const CATEGORIES=new Set(['housing','behind-the-wall','outreach','events','team','partners']);
-const INCOMING=[
-  'incoming/housing/',
-  'incoming/behind-the-wall/',
-  'incoming/outreach/',
-  'incoming/events/',
-  'incoming/team/',
-  'incoming/partners/',
-  'incoming/unsorted/'
-];
+import {CATEGORIES,INCOMING,categoryFromKey,fileName,idForKey,validateUpload} from './media-policy.js';
+
 const DEFAULT_GALLERIES=[
   {id:'housing',slug:'housing',title:'VJL Housing',description:'Housing, community activities, and Veteran transition support.',category:'housing',sort_order:10},
   {id:'behind-the-wall',slug:'behind-the-wall',title:'Behind-the-Wall Training',description:'Training and prevention work with justice-involved Veterans and active-duty service members.',category:'behind-the-wall',sort_order:20},
@@ -38,36 +30,30 @@ function auth(env,req){
   return Boolean(env.ADMIN_TOKEN&&h===`Bearer ${env.ADMIN_TOKEN}`);
 }
 
-function categoryFromKey(key){
-  for(const prefix of INCOMING){
-    if(key.startsWith(prefix)){
-      const category=prefix.split('/')[1];
-      return category==='unsorted'?null:category;
-    }
-  }
-  return null;
-}
-
-const fileName=key=>key.split('/').pop()||key;
-
-function idForKey(key){
-  let h=2166136261;
-  for(let i=0;i<key.length;i++){
-    h^=key.charCodeAt(i);
-    h=Math.imul(h,16777619);
-  }
-  return 'm_'+(h>>>0).toString(16);
-}
-
 async function history(env,mediaId,action,oldStatus,newStatus,actor,details={}){
   await env.DB.prepare(
     'INSERT INTO media_history (media_id,action,old_status,new_status,actor,details) VALUES (?,?,?,?,?,?)'
   ).bind(mediaId,action,oldStatus||null,newStatus||null,actor||null,JSON.stringify(details)).run();
 }
 
+async function inspectUpload(env,object){
+  const metadata=await env.MEDIA.head(object.key);
+  if(!metadata)return {ok:false,code:'SOURCE_MISSING',message:'The R2 source object could not be read during ingestion.'};
+  const ranged=await env.MEDIA.get(object.key,{range:{offset:0,length:16}});
+  if(!ranged)return {ok:false,code:'SOURCE_MISSING',message:'The R2 source object could not be read during ingestion.'};
+  const headBytes=new Uint8Array(await ranged.arrayBuffer());
+  return validateUpload({
+    filename:fileName(object.key),
+    size:object.size,
+    declaredContentType:metadata.httpMetadata?.contentType,
+    headBytes
+  });
+}
+
 async function syncIncoming(env){
   let scanned=0;
   let added=0;
+  let rejected=0;
   for(const prefix of INCOMING){
     let cursor;
     do{
@@ -76,24 +62,43 @@ async function syncIncoming(env){
         scanned++;
         const id=idForKey(object.key);
         const category=categoryFromKey(object.key);
-        const existing=await env.DB.prepare('SELECT id FROM media WHERE object_key=?').bind(object.key).first();
+        const existing=await env.DB.prepare('SELECT id,status FROM media WHERE object_key=?').bind(object.key).first();
+        const validation=await inspectUpload(env,object);
+        const status=validation.ok?'pending':'rejected';
+        const rejectedAt=validation.ok?null:new Date().toISOString();
+        const trashDeleteAfter=validation.ok?null:new Date(Date.now()+30*86400000).toISOString();
+        if(!validation.ok)rejected++;
         await env.DB.prepare(`
-          INSERT INTO media (id,object_key,source_folder,filename,bytes,uploaded_at,category,status,updated_at)
-          VALUES (?,?,?,?,?,?,?,'pending',CURRENT_TIMESTAMP)
+          INSERT INTO media (
+            id,object_key,source_folder,filename,content_type,bytes,uploaded_at,category,
+            validation_code,validation_message,status,rejected_at,trash_delete_after,updated_at
+          )
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
           ON CONFLICT(object_key) DO UPDATE SET
+            content_type=excluded.content_type,
             bytes=excluded.bytes,
             uploaded_at=excluded.uploaded_at,
+            validation_code=excluded.validation_code,
+            validation_message=excluded.validation_message,
             updated_at=CURRENT_TIMESTAMP
-        `).bind(id,object.key,prefix,fileName(object.key),object.size,object.uploaded.toISOString(),category).run();
+        `).bind(
+          id,object.key,prefix,fileName(object.key),validation.ok?validation.contentType:null,
+          object.size,object.uploaded.toISOString(),category,
+          validation.ok?null:validation.code,validation.ok?null:validation.message,
+          status,rejectedAt,trashDeleteAfter
+        ).run();
         if(!existing){
           added++;
-          await history(env,id,'upload',null,'pending','sync',{source_folder:prefix,category});
+          await history(
+            env,id,validation.ok?'upload':'ingest_rejected',null,status,'sync',
+            {source_folder:prefix,category,validation_code:validation.ok?null:validation.code,validation_message:validation.ok?null:validation.message}
+          );
         }
       }
       cursor=page.truncated?page.cursor:undefined;
     }while(cursor);
   }
-  return {scanned,added};
+  return {scanned,added,rejected};
 }
 
 function publicUrl(url,id){
@@ -221,10 +226,12 @@ async function transition(env,row,action,fields,actor,body={}){
 
   if(action==='review')next='review';
   if(action==='approve'){
+    if(row.validation_code)throw new Error('INVALID_UPLOAD');
     if(!fields.category)throw new Error('CATEGORY_REQUIRED');
     next='approved';
   }
   if(action==='publish'){
+    if(row.validation_code)throw new Error('INVALID_UPLOAD');
     if(!fields.category)throw new Error('CATEGORY_REQUIRED');
     const object=await env.MEDIA.head(row.object_key);
     if(!object)throw new Error('SOURCE_MISSING');
@@ -280,6 +287,7 @@ function errorResponse(error,headers={}){
   const code=String(error&&error.message||error);
   const mapping={
     INVALID_CATEGORY:[400,'Invalid category.'],
+    INVALID_UPLOAD:[409,'This media item failed ingestion validation and cannot be approved or published until the source object is replaced with a supported image and synchronized again.'],
     CATEGORY_REQUIRED:[400,'Category is required before approval or publishing.'],
     SOURCE_MISSING:[409,'The source object is missing from R2.'],
     DELETE_REQUIRES_REJECTED:[409,'Only rejected media can be permanently deleted.'],
