@@ -1,22 +1,21 @@
-const VJL_LOGO_URL='https://trademarks.justia.com/media/image.php?serial=98564453';
 const PLACEHOLDER_IMAGES=[
-  'https://images.unsplash.com/photo-1771340590660-61ffd7937f88?auto=format&fit=crop&w=1600&q=82',
-  'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=82',
-  'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1200&q=82',
-  'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&q=82',
-  'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=82'
+  'assets/images/placeholders/hero.svg',
+  'assets/images/placeholders/gallery-1.svg',
+  'assets/images/placeholders/gallery-2.svg',
+  'assets/images/placeholders/gallery-3.svg',
+  'assets/images/placeholders/gallery-4.svg'
 ];
 
 document.querySelectorAll('img').forEach((img,index)=>{
   const original=img.getAttribute('src')||'';
   const isLogo=img.classList.contains('logo')||img.classList.contains('footer-logo')||original.includes('vjl-logo');
   if(isLogo){
-    img.src=VJL_LOGO_URL;
-    img.referrerPolicy='no-referrer';
+    img.src=original.startsWith('../')?'../assets/images/vjl-logo.png':'assets/images/vjl-logo.png';
     return;
   }
-  const replacement=PLACEHOLDER_IMAGES[index%PLACEHOLDER_IMAGES.length];
-  if(original.includes('googleusercontent.com')) img.src=replacement;
+  const prefix=original.startsWith('../')?'../':'';
+  const replacement=prefix+PLACEHOLDER_IMAGES[index%PLACEHOLDER_IMAGES.length];
+  if(/^https?:\/\//.test(original)||original.includes('googleusercontent.com')) img.src=replacement;
   img.addEventListener('error',()=>{
     if(img.dataset.placeholderFallback==='1') return;
     img.dataset.placeholderFallback='1';
