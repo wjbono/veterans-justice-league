@@ -19,18 +19,25 @@
   let lastFocus=null;
   let touchStartX=null;
 
-  const normalizeGallery=(gallery,index)=>({
-    id:gallery.id||gallery.slug||`gallery-${index+1}`,
-    title:gallery.title||gallery.name||gallery.category||'Veterans Justice League',
-    description:gallery.description||'',
-    category:gallery.category||gallery.id||'',
-    cover:gallery.cover||gallery.cover_url||gallery.items?.[0]?.url||'',
-    items:(gallery.items||gallery.media||[]).map(item=>({
-      url:item.public_url||item.url||item.large_url||item.web_url||'',
-      caption:item.caption||item.title||gallery.title||'Veterans Justice League',
-      alt:item.alt_text||item.alt||item.caption||'Veterans Justice League photo'
-    })).filter(item=>item.url)
-  });
+  const normalizeGallery=(gallery,index)=>{
+    const items=(gallery.items||gallery.media||[]).map(item=>{
+      const web=item.public_url||item.web_url||item.url||item.large_url||item.thumb_url||'';
+      return {
+        thumb:item.thumb_url||web,
+        url:item.large_url||web,
+        caption:item.caption||item.title||gallery.title||'Veterans Justice League',
+        alt:item.alt_text||item.alt||item.caption||'Veterans Justice League photo'
+      };
+    }).filter(item=>item.url);
+    return {
+      id:gallery.id||gallery.slug||`gallery-${index+1}`,
+      title:gallery.title||gallery.name||gallery.category||'Veterans Justice League',
+      description:gallery.description||'',
+      category:gallery.category||gallery.id||'',
+      cover:gallery.cover||gallery.cover_url||items[0]?.thumb||items[0]?.url||'',
+      items
+    };
+  };
 
   async function loadGalleries(){
     const api=(window.VJL_CONFIG&&window.VJL_CONFIG.API_BASE)||'';
@@ -42,9 +49,7 @@
           const source=data.galleries||data.items||[];
           galleries=source.map(normalizeGallery).filter(gallery=>gallery.items.length);
         }
-      }catch(error){
-        console.warn('Gallery API unavailable; using local gallery preview.',error);
-      }
+      }catch(error){}
     }
     if(!galleries.length){
       galleries=((window.VJL_CONFIG&&window.VJL_CONFIG.STATIC_GALLERIES)||[]).map(normalizeGallery);
@@ -72,7 +77,7 @@
       const image=document.createElement('img');
       image.loading='lazy';
       image.decoding='async';
-      image.src=gallery.cover||gallery.items[0]?.url||'';
+      image.src=gallery.cover||gallery.items[0]?.thumb||gallery.items[0]?.url||'';
       image.alt='';
 
       const body=document.createElement('span');
