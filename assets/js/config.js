@@ -6,12 +6,9 @@ window.VJL_CONFIG={
       title:'VJL Housing',
       description:'Housing, community activities, and Veteran transition support.',
       category:'housing',
-      cover:'assets/images/placeholders/gallery-4.svg',
+      cover:'assets/images/vjl-housing.jpg',
       items:[
-        {url:'assets/images/placeholders/gallery-4.svg',caption:'VJL Housing',alt:'Placeholder for approved Veterans Justice League housing media'},
-        {url:'assets/images/placeholders/gallery-1.svg',caption:'Housing Community',alt:'Placeholder for approved Veterans Justice League housing community media'},
-        {url:'assets/images/placeholders/gallery-2.svg',caption:'Resident Support',alt:'Placeholder for approved Veterans Justice League housing support media'},
-        {url:'assets/images/placeholders/gallery-3.svg',caption:'Community Activity',alt:'Placeholder for approved Veterans Justice League housing activity media'}
+        {url:'assets/images/vjl-housing.jpg',caption:'VJL Housing',alt:'Veterans Justice League housing location with an American flag displayed outside'}
       ]
     },
     {
@@ -19,12 +16,9 @@ window.VJL_CONFIG={
       title:'Behind-the-Wall Training',
       description:'Training and prevention work with justice-involved Veterans and active-duty service members.',
       category:'behind-the-wall',
-      cover:'assets/images/placeholders/gallery-3.svg',
+      cover:'assets/images/vjl-training.jpg',
       items:[
-        {url:'assets/images/placeholders/gallery-3.svg',caption:'Behind-the-Wall Training',alt:'Placeholder for approved Veterans Justice League training media'},
-        {url:'assets/images/placeholders/gallery-1.svg',caption:'Peer-Led Training',alt:'Placeholder for approved Veterans Justice League peer training media'},
-        {url:'assets/images/placeholders/gallery-2.svg',caption:'Prevention Work',alt:'Placeholder for approved Veterans Justice League prevention media'},
-        {url:'assets/images/placeholders/gallery-4.svg',caption:'Service Member Engagement',alt:'Placeholder for approved Veterans Justice League service member engagement media'}
+        {url:'assets/images/vjl-training.jpg',caption:'Behind-the-Wall Training',alt:'Veterans and service members gathered indoors for Veterans Justice League training'}
       ]
     },
     {
@@ -32,48 +26,36 @@ window.VJL_CONFIG={
       title:'Outreach',
       description:'Prison visits, Veteran resources, community education, and outreach.',
       category:'outreach',
-      cover:'assets/images/placeholders/gallery-2.svg',
+      cover:'assets/images/vjl-outreach.jpg',
       items:[
-        {url:'assets/images/placeholders/gallery-2.svg',caption:'VJL Outreach',alt:'Placeholder for approved Veterans Justice League outreach media'},
-        {url:'assets/images/placeholders/gallery-1.svg',caption:'Community Outreach',alt:'Placeholder for approved Veterans Justice League community outreach media'},
-        {url:'assets/images/placeholders/gallery-3.svg',caption:'Veteran Resources',alt:'Placeholder for approved Veterans Justice League resource outreach media'},
-        {url:'assets/images/placeholders/gallery-4.svg',caption:'Community Support',alt:'Placeholder for approved Veterans Justice League community support media'}
+        {url:'assets/images/vjl-outreach.jpg',caption:'VJL Outreach',alt:'Veterans Justice League members standing together outdoors during outreach'}
       ]
     },
     {
       id:'events',
       title:'Events',
-      description:'Approved photos from VJL events and community activities.',
+      description:'Event photos will appear here as approved VJL media is added.',
       category:'events',
       cover:'assets/images/placeholders/gallery-1.svg',
-      items:[
-        {url:'assets/images/placeholders/gallery-1.svg',caption:'VJL Events',alt:'Placeholder for approved Veterans Justice League event media'},
-        {url:'assets/images/placeholders/gallery-2.svg',caption:'Community Event',alt:'Placeholder for approved Veterans Justice League community event media'},
-        {url:'assets/images/placeholders/gallery-3.svg',caption:'Veteran Event',alt:'Placeholder for approved Veterans Justice League Veteran event media'},
-        {url:'assets/images/placeholders/gallery-4.svg',caption:'VJL Community',alt:'Placeholder for approved Veterans Justice League community media'}
-      ]
+      items:[]
     },
     {
       id:'team',
       title:'Team',
-      description:'Approved team and volunteer photos when available.',
+      description:'Veterans Justice League team and community.',
       category:'team',
-      cover:'assets/images/placeholders/gallery-1.svg',
+      cover:'assets/images/vjl-team.jpg',
       items:[
-        {url:'assets/images/placeholders/gallery-1.svg',caption:'VJL Team',alt:'Placeholder for approved Veterans Justice League team media'},
-        {url:'assets/images/placeholders/gallery-3.svg',caption:'VJL Volunteers',alt:'Placeholder for approved Veterans Justice League volunteer media'}
+        {url:'assets/images/vjl-team.jpg',caption:'VJL Team',alt:'Veterans Justice League members standing together outdoors in VJL shirts'}
       ]
     },
     {
       id:'partners',
       title:'Partners',
-      description:'Approved photos involving VJL community partners.',
+      description:'Partner photos will appear here as approved VJL media is added.',
       category:'partners',
       cover:'assets/images/placeholders/gallery-2.svg',
-      items:[
-        {url:'assets/images/placeholders/gallery-2.svg',caption:'Community Partners',alt:'Placeholder for approved Veterans Justice League partner media'},
-        {url:'assets/images/placeholders/gallery-4.svg',caption:'VJL Partnerships',alt:'Placeholder for approved Veterans Justice League partnership media'}
-      ]
+      items:[]
     }
   ]
 };
