@@ -1,1 +1,3 @@
+const VJL_LOGO_URL='https://trademarks.justia.com/media/image.php?serial=98564453';
+document.querySelectorAll('img[src$="assets/images/vjl-logo.png"],img[src$="../assets/images/vjl-logo.png"]').forEach(img=>{img.src=VJL_LOGO_URL;img.referrerPolicy='no-referrer';});
 const menuButton=document.querySelector('[data-menu-button]');const mobileMenu=document.querySelector('[data-mobile-menu]');if(menuButton&&mobileMenu){menuButton.addEventListener('click',()=>{const open=mobileMenu.classList.toggle('open');menuButton.setAttribute('aria-expanded',open?'true':'false')});mobileMenu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{mobileMenu.classList.remove('open');menuButton.setAttribute('aria-expanded','false')}));}
