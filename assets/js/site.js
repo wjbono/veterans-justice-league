@@ -23,6 +23,12 @@ document.querySelectorAll('img').forEach((img,index)=>{
   });
 });
 
+// Older page shells pointed the Programs navigation item directly to Housing.
+// Keep every rendered desktop/mobile Programs link routed through the program landing page.
+document.querySelectorAll('nav a').forEach(link=>{
+  if(link.textContent.trim()==='Programs')link.setAttribute('href',location.pathname.includes('/admin/')?'../programs.html':'programs.html');
+});
+
 const menuButton=document.querySelector('[data-menu-button]');
 const mobileMenu=document.querySelector('[data-mobile-menu]');
 if(menuButton&&mobileMenu){
