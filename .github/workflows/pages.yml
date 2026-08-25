@@ -38,13 +38,18 @@ jobs:
         run: |
           node --check assets/js/site.js
           node --check assets/js/config.js
+          node --check assets/js/home-media.js
           node --check assets/js/gallery.js
           node --check assets/js/admin.js
           node --check worker/src/media-policy.js
+          node --check worker/src/derivative-policy.js
           node --check worker/src/index.js
           node --check worker/tests/media-policy.test.mjs
-      - name: Test media ingestion policy
-        run: node worker/tests/media-policy.test.mjs
+          node --check worker/tests/derivative-policy.test.mjs
+      - name: Test Worker media policies
+        run: |
+          node worker/tests/media-policy.test.mjs
+          node worker/tests/derivative-policy.test.mjs
       - name: Prepare production assets
         run: python3 .github/scripts/prepare_assets.py
       - name: Prepare static launch metadata
@@ -101,6 +106,7 @@ jobs:
             'assets/css/styles.css' \
             'assets/css/gallery.css' \
             'assets/js/site.js' \
+            'assets/js/home-media.js' \
             'assets/js/gallery.js' \
             'assets/images/vjl-logo.png'; do
             echo "Checking ${base}${path}"
