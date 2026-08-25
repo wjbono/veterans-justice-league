@@ -41,17 +41,17 @@ Goal: bring the replacement Veterans Justice League website to a state where the
 
 ## Gallery experience
 
-- [ ] Redesign Gallery as a landing page containing multiple gallery groups
-- [ ] Support gallery groupings such as Housing, Behind-the-Wall, Outreach, Events, Team, Partners, and other approved categories
-- [ ] Make each gallery open into its own photo collection
-- [ ] Implement carousel/lightbox browsing within gallery collections
-- [ ] Add previous/next controls
-- [ ] Add keyboard navigation
-- [ ] Add touch/swipe-friendly behavior for mobile
-- [ ] Display captions where available
-- [ ] Display accessible alt text
-- [ ] Support gallery/event assignment from media metadata rather than hardcoded HTML
-- [ ] Keep homepage Recent Moments as a small preview linking into the full gallery experience
+- [x] Redesign Gallery as a landing page containing multiple gallery groups
+- [x] Support gallery groupings such as Housing, Behind-the-Wall, Outreach, Events, Team, Partners, and other approved categories
+- [x] Make each gallery open into its own photo collection
+- [x] Implement carousel/lightbox browsing within gallery collections
+- [x] Add previous/next controls
+- [x] Add keyboard navigation
+- [x] Add touch/swipe-friendly behavior for mobile
+- [x] Display captions where available
+- [x] Display accessible alt text
+- [~] Support gallery/event assignment from media metadata rather than hardcoded HTML — frontend now accepts grouped API data; final metadata source depends on Phase 2/3 backend connection
+- [x] Keep homepage Recent Moments as a small preview linking into the full gallery experience
 
 ## Responsive behavior
 
@@ -59,7 +59,7 @@ Goal: bring the replacement Veterans Justice League website to a state where the
 - [ ] Full tablet visual pass
 - [ ] Full mobile visual pass
 - [ ] Check navigation at intermediate viewport widths
-- [ ] Check buttons, cards, forms, galleries, carousels, and footer wrapping
+- [~] Check buttons, cards, forms, galleries, carousels, and footer wrapping — gallery/carousel responsive behavior implemented; full-site pass remains
 
 ---
 
@@ -160,15 +160,15 @@ On approval/publishing:
 
 - [ ] Replace static gallery placeholders with Worker/D1/R2 media feed
 - [ ] Homepage Recent Moments pulls approved/published featured/recent images dynamically
-- [ ] Gallery landing page pulls gallery definitions dynamically
-- [ ] Individual gallery collections pull published media dynamically
+- [~] Gallery landing page pulls gallery definitions dynamically — API consumption implemented; awaiting live Worker/D1 data
+- [~] Individual gallery collections pull published media dynamically — API consumption implemented; awaiting live Worker/D1 data
 - [ ] Only `PUBLISHED` media is publicly displayed
 - [ ] Archived/rejected/pending media never appears publicly
 - [ ] Verify category filters
 - [ ] Verify gallery/event filters
 - [ ] Verify featured-image behavior
 - [ ] Verify public URLs and caching
-- [ ] Verify graceful API-unavailable state
+- [x] Verify graceful API-unavailable state — local grouped gallery preview remains usable without the backend
 
 ---
 
@@ -197,7 +197,7 @@ On approval/publishing:
 - [ ] Focus-state audit
 - [ ] Color-contrast audit
 - [ ] Alt-text audit
-- [ ] Carousel accessibility audit
+- [~] Carousel accessibility audit — keyboard controls, focus trapping, accessible controls, captions, alt text, and Escape close implemented; final QC remains
 - [ ] Form accessibility audit
 - [ ] Skip-link verification
 
@@ -230,7 +230,7 @@ On approval/publishing:
 - [ ] Test Donate flow
 - [ ] Test Contact form
 - [ ] Test Get Help flow
-- [ ] Test galleries/carousels
+- [~] Test galleries/carousels — implementation complete; deployed visual/interaction QC remains
 - [ ] Test admin workflow end-to-end
 - [ ] Test upload → review → publish → archive → republish
 - [ ] Test rejection/quarantine flow
