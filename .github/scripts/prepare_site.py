@@ -12,6 +12,8 @@ PUBLIC_PAGES = [
     'outreach.html','gallery.html','events.html','contact.html','team.html'
 ]
 QC_VERSION = '20260824-2026'
+DEV_FOOTER = '© 2026 Veterans Justice League. Website redesign in development at this temporary GitHub Pages address.'
+PUBLIC_FOOTER = '© 2026 Veterans Justice League.'
 
 
 def first(pattern, text, flags=0):
@@ -90,16 +92,21 @@ def strip_generated(text):
     return text
 
 
+def clean_public_chrome(text):
+    return text.replace(DEV_FOOTER, PUBLIC_FOOTER)
+
+
 def prepare_public_page(filename):
     path = ROOT / filename
     text = strip_generated(path.read_text(encoding='utf-8'))
+    text = clean_public_chrome(text)
     title, desc, canonical = page_metadata(filename, text)
     text = insert_before_head_close(text, build_public_metadata(filename, title, desc, canonical))
     path.write_text(text, encoding='utf-8')
 
 
 def add_noindex(path, icon_href, qc_href):
-    text = path.read_text(encoding='utf-8')
+    text = clean_public_chrome(path.read_text(encoding='utf-8'))
     text = re.sub(r'<meta\s+name=["\']robots["\'][^>]*>', '', text, flags=re.I)
     text = re.sub(r'<link\s+rel=["\']icon["\'][^>]*>', '', text, flags=re.I)
     text = re.sub(r'<link\s+[^>]*data-vjl-qc[^>]*>', '', text, flags=re.I)
