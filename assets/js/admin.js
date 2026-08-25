@@ -65,12 +65,14 @@
     const caption=escapeHtml(item.caption||'');
     const alt=escapeHtml(item.alt_text||'');
     const preview=escapeHtml(item.preview_url||item.public_url||'');
+    const validationCode=escapeHtml(item.validation_code||'');
+    const validationMessage=escapeHtml(item.validation_message||'');
 
     el.innerHTML=`
       <label class="admin-card-select"><input type="checkbox" data-select-item aria-label="Select ${title}"></label>
       <button type="button" class="admin-thumb" data-preview-url="${preview}" data-preview-title="${title}" aria-label="Open larger preview of ${title}"><span class="admin-empty-thumb">Load preview</span></button>
       <div class="admin-fields">
-        <div class="admin-meta"><strong>${title}</strong><span>Status: ${status}</span><span>Uploaded: ${uploaded||'Unknown'}</span>${exif?`<span>Photo date: ${exif}</span>`:''}${source?`<span>Source: ${source}</span>`:''}</div>
+        <div class="admin-meta"><strong>${title}</strong><span>Status: ${status}</span><span>Uploaded: ${uploaded||'Unknown'}</span>${exif?`<span>Photo date: ${exif}</span>`:''}${source?`<span>Source: ${source}</span>`:''}${validationCode?`<span class="admin-validation-error">Validation: ${validationCode}${validationMessage?` — ${validationMessage}`:''}</span>`:''}</div>
         <select data-field="category" aria-label="Category for ${title}"><option value="">Unsorted</option>${categoryOptions(item.category)}</select>
         <input data-field="gallery" placeholder="Gallery / event slug" value="${gallery}" aria-label="Gallery assignment for ${title}">
         <input data-field="caption" placeholder="Caption" value="${caption}" aria-label="Caption for ${title}">
@@ -210,7 +212,7 @@
       const response=await fetch(api.replace(/\/$/,'')+'/api/admin/sync',{method:'POST',headers:authHeaders(true)});
       const data=await response.json().catch(()=>({}));
       if(!response.ok)throw new Error(data.error||('HTTP '+response.status));
-      msg(`Sync complete: ${data.scanned||0} scanned, ${data.added||0} new.`);
+      msg(`Sync complete: ${data.scanned||0} scanned, ${data.added||0} new, ${data.rejected||0} rejected by validation.`);
       await load();
     }catch(error){msg('Sync failed: '+error.message);}
   });
