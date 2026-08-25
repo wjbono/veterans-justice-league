@@ -14,6 +14,12 @@ INDEXABLE_PAGES = [
 PUBLIC_PAGES = INDEXABLE_PAGES + ['404.html']
 EXTERNAL_SCHEMES = {'http','https','mailto','tel','data','javascript'}
 FORBIDDEN = ('googleusercontent.com',)
+PROTOTYPE_MEDIA_REFS = (
+    'assets/images/vjl-housing.jpg',
+    'assets/images/vjl-training.jpg',
+    'assets/images/vjl-outreach.jpg',
+    'assets/images/vjl-team.jpg',
+)
 
 class PageParser(HTMLParser):
     def __init__(self):
@@ -203,6 +209,20 @@ def validate_admin():
     return errors
 
 
+def validate_no_prototype_media():
+    errors = []
+    files = PUBLIC_PAGES + ['assets/js/config.js']
+    for name in files:
+        path = ROOT / name
+        if not path.exists():
+            continue
+        text = path.read_text(encoding='utf-8')
+        for ref in PROTOTYPE_MEDIA_REFS:
+            if ref in text:
+                errors.append(f'{name}: prototype/mockup media reference is not allowed in public preview: {ref}')
+    return errors
+
+
 def main():
     errors = []
     titles = {}
@@ -215,6 +235,7 @@ def main():
         if page in INDEXABLE_PAGES and desc:
             descriptions.setdefault(desc, []).append(page)
     errors.extend(validate_admin())
+    errors.extend(validate_no_prototype_media())
 
     for title, pages in titles.items():
         if len(pages) > 1:
@@ -225,12 +246,13 @@ def main():
 
     required = [
         'assets/images/vjl-logo.png',
-        'assets/images/vjl-housing.jpg',
-        'assets/images/vjl-training.jpg',
-        'assets/images/vjl-outreach.jpg',
-        'assets/images/vjl-team.jpg',
+        'assets/images/placeholders/hero.svg',
+        'assets/images/placeholders/gallery-1.svg',
+        'assets/images/placeholders/gallery-2.svg',
+        'assets/images/placeholders/gallery-3.svg',
+        'assets/images/placeholders/gallery-4.svg',
         'assets/css/styles.css','assets/css/qc.css',
-        'assets/js/site.js','robots.txt','sitemap.xml'
+        'assets/js/site.js','assets/js/config.js','robots.txt','sitemap.xml'
     ]
     for rel in required:
         if not (ROOT / rel).exists():
