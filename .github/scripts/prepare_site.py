@@ -128,8 +128,8 @@ def enhance_accessibility_and_performance(text):
         flags=re.I,
     )
 
-    # Avoid empty image requests before the gallery modal has a selected item.
-    text = re.sub(r'(<img\b[^>]*\bdata-gallery-image\b[^>]*)\s+src=["\']["\']', r'\1', text, flags=re.I)
+    # Dynamic modal images should not request the current document before JS selects media.
+    text = re.sub(r'(<img\b[^>]*?)\s+src=["\']\s*["\']', r'\1', text, flags=re.I)
 
     # Make image decoding intent static. Hero imagery is high-priority; other content
     # imagery is lazy unless it is the header/footer logo.
