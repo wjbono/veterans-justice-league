@@ -2,13 +2,7 @@ const inAdmin=location.pathname.includes('/admin/');
 const ASSET_BASE=inAdmin?'../assets/':'assets/';
 const pageFile=(location.pathname.split('/').pop()||'index.html').toLowerCase();
 
-// Load the shared responsive/accessibility QC layer on every page.
-const qcStyles=document.createElement('link');
-qcStyles.rel='stylesheet';
-qcStyles.href=ASSET_BASE+'css/qc.css?v=20260824-2026';
-document.head.append(qcStyles);
-
-// SEO/social metadata is generated statically during the Pages build so crawlers do not depend on JavaScript.
+// SEO/social metadata and the shared QC stylesheet are generated statically during the Pages build.
 
 // Basic document accessibility normalization.
 const main=document.querySelector('main[id="main"]');
