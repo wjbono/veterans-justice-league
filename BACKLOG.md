@@ -1,6 +1,6 @@
 # Veterans Justice League Website Publish-Ready Backlog
 
-Last updated: 2026-08-24
+Last updated: 2026-08-25
 
 Goal: bring the replacement Veterans Justice League website to a state where the client can approve launch and the only remaining production action is the final DNS cutover from Google Sites to GitHub Pages, followed by verification.
 
@@ -197,13 +197,16 @@ On approval/publishing:
 
 # Phase 4: Load and Organize Real Client Content
 
-- [ ] Import approved VJL photo library
-- [ ] Categorize photos
-- [ ] Assign photos to galleries/events
+Media-source audit note: the photographic images recovered from `VJL_Client_Preview.html` are explicitly labeled as **mockup images** in that starter prototype. They must not be represented or promoted as authentic client/VJL photography. A direct server-side attempt to retrieve the currently published Google Sites image assets was also blocked by the Google image host with HTTP 403, so the redesign will not rely on fragile hotlinks or silently scrape those files.
+
+- [x] Audit recovered starter/prototype image provenance — recovered photographic assets are mockup-only, not approved client media
+- [!] Import approved VJL photo library — authentic source files are not present in the current project package; requires client-supplied media or the future Cloudflare/R2 ingest path
+- [ ] Categorize approved photos
+- [ ] Assign approved photos to galleries/events
 - [ ] Add captions where appropriate
 - [ ] Add meaningful alt text
 - [ ] Select featured/recent images
-- [ ] Replace remaining placeholder imagery
+- [!] Replace remaining placeholder imagery — blocked until authentic approved VJL media is available
 - [ ] Confirm all public copy remains grounded in approved/current VJL information
 - [ ] Obtain and add client-approved Team bios if desired for launch
 - [ ] Obtain and add any client-approved event updates if desired for launch
