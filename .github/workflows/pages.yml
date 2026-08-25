@@ -43,6 +43,8 @@ jobs:
           node --check worker/src/index.js
       - name: Prepare static launch metadata
         run: python3 .github/scripts/prepare_site.py
+      - name: Validate production cleanliness
+        run: python3 .github/scripts/validate_cleanliness.py
       - name: Validate static site
         run: python3 .github/scripts/validate_site.py
       - name: Assemble publishable site artifact
@@ -59,6 +61,7 @@ jobs:
           test -f _site/admin/index.html
           test ! -e _site/BACKLOG.md
           test ! -e _site/README.md
+          test ! -e _site/LAUNCH_RUNBOOK.md
           test ! -e _site/worker
           test ! -e _site/.github
           test -z "$(find _site -type f \( -name '.gitkeep' -o -name '*.b64' -o -name '*.bak' -o -name '*.tmp' \) -print -quit)"
