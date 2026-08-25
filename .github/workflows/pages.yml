@@ -34,6 +34,8 @@ jobs:
           test "$(wc -c < assets/images/vjl-logo.png)" -eq 32857
           echo "259d6163ff0a2887217a2fd300448aef381fb85cc7df4e479f43738f983b7956  assets/images/vjl-logo.png" | sha256sum -c -
           rm -rf .build-assets
+      - name: Prepare static launch metadata
+        run: python3 .github/scripts/prepare_site.py
       - name: Validate static site
         run: python3 .github/scripts/validate_site.py
       - uses: actions/configure-pages@v5
