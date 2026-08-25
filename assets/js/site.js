@@ -1,4 +1,11 @@
 const ASSET_BASE=location.pathname.includes('/admin/')?'../assets/':'assets/';
+
+// Load the shared responsive/accessibility QC layer on every page.
+const qcStyles=document.createElement('link');
+qcStyles.rel='stylesheet';
+qcStyles.href=ASSET_BASE+'css/qc.css?v=20260824-2026';
+document.head.append(qcStyles);
+
 const PLACEHOLDER_IMAGES=[
   'images/placeholders/hero.svg',
   'images/placeholders/gallery-1.svg',
@@ -12,10 +19,13 @@ document.querySelectorAll('img').forEach((img,index)=>{
   const isLogo=img.classList.contains('logo')||img.classList.contains('footer-logo')||original.includes('vjl-logo');
   if(isLogo){
     img.src=ASSET_BASE+'images/vjl-logo.png';
+    img.decoding='async';
     return;
   }
   const replacement=ASSET_BASE+PLACEHOLDER_IMAGES[index%PLACEHOLDER_IMAGES.length];
   if(/^https?:\/\//.test(original)||original.includes('googleusercontent.com')) img.src=replacement;
+  if(!img.closest('.hero-photo')) img.loading=img.loading||'lazy';
+  img.decoding='async';
   img.addEventListener('error',()=>{
     if(img.dataset.placeholderFallback==='1') return;
     img.dataset.placeholderFallback='1';
@@ -23,21 +33,42 @@ document.querySelectorAll('img').forEach((img,index)=>{
   });
 });
 
-// Older page shells pointed the Programs navigation item directly to Housing.
-// Keep every rendered desktop/mobile Programs link routed through the program landing page.
+// Older page shells pointed Programs directly to Housing. Normalize navigation and current-page state.
+const inAdmin=location.pathname.includes('/admin/');
+const currentFile=(location.pathname.split('/').pop()||'index.html').toLowerCase();
 document.querySelectorAll('nav a').forEach(link=>{
-  if(link.textContent.trim()==='Programs')link.setAttribute('href',location.pathname.includes('/admin/')?'../programs.html':'programs.html');
+  if(link.textContent.trim()==='Programs') link.setAttribute('href',inAdmin?'../programs.html':'programs.html');
+  const href=(link.getAttribute('href')||'').split('#')[0].split('?')[0].toLowerCase();
+  const target=href.split('/').pop();
+  if(target&&target===currentFile){
+    link.setAttribute('aria-current','page');
+    link.classList.add('active');
+  }
 });
 
 const menuButton=document.querySelector('[data-menu-button]');
 const mobileMenu=document.querySelector('[data-mobile-menu]');
 if(menuButton&&mobileMenu){
-  menuButton.addEventListener('click',()=>{
-    const open=mobileMenu.classList.toggle('open');
+  mobileMenu.setAttribute('aria-hidden','true');
+  const setMenu=open=>{
+    mobileMenu.classList.toggle('open',open);
+    mobileMenu.setAttribute('aria-hidden',open?'false':'true');
     menuButton.setAttribute('aria-expanded',open?'true':'false');
+    menuButton.setAttribute('aria-label',open?'Close navigation':'Open navigation');
+    if(open){
+      const first=mobileMenu.querySelector('a');
+      if(first) first.focus();
+    }
+  };
+  menuButton.addEventListener('click',()=>setMenu(!mobileMenu.classList.contains('open')));
+  mobileMenu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>setMenu(false)));
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&mobileMenu.classList.contains('open')){
+      setMenu(false);
+      menuButton.focus();
+    }
   });
-  mobileMenu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
-    mobileMenu.classList.remove('open');
-    menuButton.setAttribute('aria-expanded','false');
-  }));
+  window.addEventListener('resize',()=>{
+    if(window.innerWidth>900&&mobileMenu.classList.contains('open')) setMenu(false);
+  });
 }
