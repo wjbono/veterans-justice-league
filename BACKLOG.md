@@ -19,12 +19,14 @@ Goal: bring the replacement Veterans Justice League website to a state where the
 - [x] Existing production Google Sites deployment left untouched
 - [x] Core public pages created: Home, About, Programs, Housing, Behind-the-Wall Training, Outreach, Gallery, Events, Contact, Team
 - [x] Initial responsive styling implemented
-- [x] Exact VJL logo stored locally in the repository
+- [x] Exact VJL logo restored during Pages deployment and verified by file size + SHA-256 before publish
 - [x] Local placeholder imagery added so preview does not depend on broken external hotlinks
 - [x] Initial Cloudflare Worker/D1/R2 backend scaffold added under `worker/`
 - [x] Initial media-review/admin shell added under `/admin/`
 - [x] Custom `404.html` created for GitHub Pages
 - [x] Shared responsive/accessibility QC layer added under `assets/css/qc.css`
+- [x] Automated pre-deployment static-site validator added and required before Pages publish
+- [x] Published Pages artifact independently verified: exact logo checksum, static SEO metadata, noindex rules, and build-asset cleanup
 
 ---
 
@@ -230,14 +232,14 @@ On approval/publishing:
 
 - [x] Unique public page titles
 - [x] Descriptive public meta descriptions
-- [~] Canonical URL strategy for production domain — production canonicals injected for public pages; static-head finalization remains desirable before launch
-- [~] Open Graph metadata — public metadata injected at runtime; static-head finalization remains for social crawlers
+- [x] Canonical URL strategy for production domain — canonical tags are built into static HTML before deployment
+- [x] Open Graph metadata — built into static HTML before deployment and validated
 - [~] Social share image — exact VJL logo used as current share image; dedicated 1200×630 launch graphic still pending
 - [x] Favicon/site icon uses the exact VJL logo
 - [x] `sitemap.xml`
 - [x] `robots.txt` with `/admin/` excluded
-- [~] Structured data — verified Organization schema injected on homepage; final static-head validation remains
-- [x] Admin and 404 pages excluded from indexing via meta robots directives
+- [x] Structured data — Organization schema built into homepage static HTML and validated
+- [x] Admin and 404 pages excluded from indexing via static meta robots directives
 
 ## Performance
 
@@ -254,6 +256,8 @@ On approval/publishing:
 ## Functional QC
 
 - [x] Static internal-link target audit — all referenced public HTML targets exist in repository
+- [x] Deployment gate validates required public files, page structure, metadata, local targets, skip links, and external-link safety
+- [x] Latest deployed Pages artifact independently inspected after successful workflow completion
 - [~] Test all internal links on deployed site — markup/routing verified; live click-through remains
 - [~] Test all external links on deployed site — URLs normalized; live verification remains
 - [~] Test Donate flow — consistent Stripe destination verified in markup; live transaction-page check remains
