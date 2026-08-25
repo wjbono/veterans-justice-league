@@ -43,13 +43,16 @@ jobs:
           node --check assets/js/admin.js
           node --check worker/src/media-policy.js
           node --check worker/src/derivative-policy.js
+          node --check worker/src/exif-date.js
           node --check worker/src/index.js
           node --check worker/tests/media-policy.test.mjs
           node --check worker/tests/derivative-policy.test.mjs
+          node --check worker/tests/exif-date.test.mjs
       - name: Test Worker media policies
         run: |
           node worker/tests/media-policy.test.mjs
           node worker/tests/derivative-policy.test.mjs
+          node worker/tests/exif-date.test.mjs
       - name: Prepare production assets
         run: python3 .github/scripts/prepare_assets.py
       - name: Prepare static launch metadata
