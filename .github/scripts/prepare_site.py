@@ -11,6 +11,7 @@ PUBLIC_PAGES = [
     'index.html','about.html','programs.html','housing.html','behind-the-wall.html',
     'outreach.html','gallery.html','events.html','contact.html','team.html'
 ]
+QC_VERSION = '20260824-2026'
 
 
 def first(pattern, text, flags=0):
@@ -38,6 +39,7 @@ def page_metadata(filename, text):
 def build_public_metadata(filename, title, desc, canonical):
     attrs = lambda value: html.escape(value, quote=True)
     pieces = [
+        f'<link rel="stylesheet" data-vjl-qc href="assets/css/qc.css?v={QC_VERSION}">',
         f'<link rel="canonical" href="{attrs(canonical)}">',
         '<link rel="icon" type="image/png" href="assets/images/vjl-logo.png">',
         f'<meta property="og:title" content="{attrs(title)}">',
@@ -76,8 +78,8 @@ def build_public_metadata(filename, title, desc, canonical):
 
 
 def strip_generated(text):
-    # The build runs from a fresh checkout, but make it idempotent for local/re-run use.
     patterns = [
+        r'<link\s+[^>]*data-vjl-qc[^>]*>',
         r'<link\s+rel=["\']canonical["\'][^>]*>',
         r'<link\s+rel=["\']icon["\'][^>]*>',
         r'<meta\s+(?:property|name)=["\'](?:og:[^"\']+|twitter:[^"\']+|theme-color)["\'][^>]*>',
@@ -96,11 +98,16 @@ def prepare_public_page(filename):
     path.write_text(text, encoding='utf-8')
 
 
-def add_noindex(path, icon_href):
+def add_noindex(path, icon_href, qc_href):
     text = path.read_text(encoding='utf-8')
     text = re.sub(r'<meta\s+name=["\']robots["\'][^>]*>', '', text, flags=re.I)
     text = re.sub(r'<link\s+rel=["\']icon["\'][^>]*>', '', text, flags=re.I)
-    markup = f'<meta name="robots" content="noindex,nofollow,noarchive"><link rel="icon" type="image/png" href="{icon_href}">'
+    text = re.sub(r'<link\s+[^>]*data-vjl-qc[^>]*>', '', text, flags=re.I)
+    markup = (
+        '<meta name="robots" content="noindex,nofollow,noarchive">'
+        f'<link rel="icon" type="image/png" href="{icon_href}">'
+        f'<link rel="stylesheet" data-vjl-qc href="{qc_href}?v={QC_VERSION}">'
+    )
     text = insert_before_head_close(text, markup)
     path.write_text(text, encoding='utf-8')
 
@@ -108,8 +115,8 @@ def add_noindex(path, icon_href):
 def main():
     for filename in PUBLIC_PAGES:
         prepare_public_page(filename)
-    add_noindex(ROOT / '404.html', 'assets/images/vjl-logo.png')
-    add_noindex(ROOT / 'admin/index.html', '../assets/images/vjl-logo.png')
+    add_noindex(ROOT / '404.html', 'assets/images/vjl-logo.png', 'assets/css/qc.css')
+    add_noindex(ROOT / 'admin/index.html', '../assets/images/vjl-logo.png', '../assets/css/qc.css')
     print(f'Prepared static launch metadata for {len(PUBLIC_PAGES)} public pages plus noindex pages.')
 
 if __name__ == '__main__':
