@@ -24,6 +24,22 @@ incoming/
 
 The Worker scans these prefixes on a schedule and through `POST /api/admin/sync`. Folder placement pre-populates category. `incoming/unsorted/` remains uncategorized and cannot be approved or published until a category is selected.
 
+## Ingestion validation
+
+Incoming R2 objects are validated before a new D1 media row enters the review workflow.
+
+Current policy:
+
+- Maximum object size: 25 MB.
+- Accepted image content: JPEG, PNG, and WebP.
+- The file extension must be `.jpg`, `.jpeg`, `.png`, or `.webp` and must agree with the detected image signature.
+- A stored R2 content type, when present, must agree with the detected image type. `application/octet-stream` is tolerated because some upload tools use it generically.
+- Empty objects and unsupported/mismatched files fail ingestion validation.
+
+A failed object is retained in R2, recorded in D1 as `rejected`, receives the normal 30-day retention date, and stores `validation_code` plus `validation_message` for the reviewer. It is not automatically deleted. The admin interface surfaces the validation reason. A failed object cannot be approved or published unless the source object is replaced with a supported image, synchronized again, and then restored for review.
+
+The pure validation policy lives in `src/media-policy.js` and is covered by `tests/media-policy.test.mjs`. GitHub Pages deployment now runs these tests before publishing the public site.
+
 ## Media lifecycle
 
 The implemented lifecycle is:
@@ -32,7 +48,8 @@ The implemented lifecycle is:
 
 A reviewed item can also move to `REJECTED`.
 
-- New R2 objects become `pending` when the incoming folders are synchronized.
+- New valid R2 objects become `pending` when the incoming folders are synchronized.
+- Invalid R2 objects are retained but enter `rejected` with the validation reason stored in D1.
 - `review` is an explicit reviewer state.
 - `approve` moves an item to `approved` and requires a category.
 - `publish` passes through `processing` and then `published`.
@@ -58,8 +75,9 @@ Only `published` media is available through the public endpoints.
 
 Requires `Authorization: Bearer <ADMIN_TOKEN>`.
 
-- `POST /api/admin/sync` — scan incoming R2 prefixes into D1
+- `POST /api/admin/sync` — scan and validate incoming R2 prefixes into D1
 - `GET /api/admin/media?status=pending` — list media for review
+- `GET /api/admin/media?status=rejected` — review rejected/invalid media and validation reasons
 - `PATCH /api/admin/media/:id` — save metadata or perform lifecycle actions
 - `PATCH /api/admin/media/bulk` — bulk save/category/gallery/approve/publish/reject/archive actions
 - `POST /api/admin/galleries/seed` — seed the default gallery groups
@@ -91,8 +109,9 @@ The public Gallery page can consume `/api/galleries` once the Worker is connecte
 5. Set `ALLOWED_ORIGINS` to the temporary GitHub Pages origin and, later, the production VJL origin.
 6. Deploy the Worker.
 7. Open `/admin/`, enter the admin token, run **Seed gallery groups**, then **Sync incoming folders**.
-8. Set `API_BASE` in `assets/js/config.js` to the Worker URL.
-9. Verify the public Gallery page and admin review workflow against the live Worker/R2/D1 backend.
+8. Confirm valid test media lands in `pending` and an intentionally unsupported test object lands in `rejected` with a validation reason.
+9. Set `API_BASE` in `assets/js/config.js` to the Worker URL.
+10. Verify the public Gallery page and admin review workflow against the live Worker/R2/D1 backend.
 
 ## Important deployment note
 
