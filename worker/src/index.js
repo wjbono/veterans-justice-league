@@ -1,5 +1,6 @@
 import {CATEGORIES,INCOMING,categoryFromKey,fileName,idForKey,validateUpload} from './media-policy.js';
 import {DERIVATIVES,derivativeKey,derivativeUrls} from './derivative-policy.js';
+import {parseExifDate} from './exif-date.js';
 
 const DEFAULT_GALLERIES=[
   {id:'housing',slug:'housing',title:'VJL Housing',description:'Housing, community activities, and Veteran transition support.',category:'housing',sort_order:10},
@@ -39,16 +40,20 @@ async function history(env,mediaId,action,oldStatus,newStatus,actor,details={}){
 
 async function inspectUpload(env,object){
   const metadata=await env.MEDIA.head(object.key);
-  if(!metadata)return {ok:false,code:'SOURCE_MISSING',message:'The R2 source object could not be read during ingestion.'};
-  const ranged=await env.MEDIA.get(object.key,{range:{offset:0,length:16}});
-  if(!ranged)return {ok:false,code:'SOURCE_MISSING',message:'The R2 source object could not be read during ingestion.'};
-  const headBytes=new Uint8Array(await ranged.arrayBuffer());
-  return validateUpload({
+  if(!metadata)return {ok:false,code:'SOURCE_MISSING',message:'The R2 source object could not be read during ingestion.',exifDate:null};
+  if(!object.size){
+    return {...validateUpload({filename:fileName(object.key),size:0,declaredContentType:metadata.httpMetadata?.contentType,headBytes:new Uint8Array()}),exifDate:null};
+  }
+  const ranged=await env.MEDIA.get(object.key,{range:{offset:0,length:Math.min(object.size,512*1024)}});
+  if(!ranged)return {ok:false,code:'SOURCE_MISSING',message:'The R2 source object could not be read during ingestion.',exifDate:null};
+  const bytes=new Uint8Array(await ranged.arrayBuffer());
+  const validation=validateUpload({
     filename:fileName(object.key),
     size:object.size,
     declaredContentType:metadata.httpMetadata?.contentType,
-    headBytes
+    headBytes:bytes.subarray(0,16)
   });
+  return {...validation,exifDate:validation.ok?parseExifDate(bytes):null};
 }
 
 async function syncIncoming(env){
@@ -71,14 +76,15 @@ async function syncIncoming(env){
         if(!validation.ok)rejected++;
         await env.DB.prepare(`
           INSERT INTO media (
-            id,object_key,source_folder,filename,content_type,bytes,uploaded_at,category,
+            id,object_key,source_folder,filename,content_type,bytes,uploaded_at,exif_date,category,
             validation_code,validation_message,status,rejected_at,trash_delete_after,updated_at
           )
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
           ON CONFLICT(object_key) DO UPDATE SET
             content_type=excluded.content_type,
             bytes=excluded.bytes,
             uploaded_at=excluded.uploaded_at,
+            exif_date=excluded.exif_date,
             validation_code=excluded.validation_code,
             validation_message=excluded.validation_message,
             status=CASE WHEN excluded.validation_code IS NOT NULL THEN 'rejected' ELSE status END,
@@ -87,7 +93,7 @@ async function syncIncoming(env){
             updated_at=CURRENT_TIMESTAMP
         `).bind(
           id,object.key,prefix,fileName(object.key),validation.ok?validation.contentType:null,
-          object.size,object.uploaded.toISOString(),category,
+          object.size,object.uploaded.toISOString(),validation.exifDate,category,
           validation.ok?null:validation.code,validation.ok?null:validation.message,
           status,rejectedAt,trashDeleteAfter
         ).run();
@@ -95,7 +101,7 @@ async function syncIncoming(env){
           added++;
           await history(
             env,id,validation.ok?'upload':'ingest_rejected',null,status,'sync',
-            {source_folder:prefix,category,validation_code:validation.ok?null:validation.code,validation_message:validation.ok?null:validation.message}
+            {source_folder:prefix,category,exif_date:validation.exifDate,validation_code:validation.ok?null:validation.code,validation_message:validation.ok?null:validation.message}
           );
         }else if(!validation.ok&&(existing.status!=='rejected'||existing.validation_code!==validation.code)){
           await history(env,id,'ingest_rejected',existing.status,'rejected','sync',{
