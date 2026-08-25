@@ -224,7 +224,12 @@ def main():
             errors.append(f'duplicate meta description across pages: {pages}')
 
     required = [
-        'assets/images/vjl-logo.png','assets/css/styles.css','assets/css/qc.css',
+        'assets/images/vjl-logo.png',
+        'assets/images/vjl-housing.jpg',
+        'assets/images/vjl-training.jpg',
+        'assets/images/vjl-outreach.jpg',
+        'assets/images/vjl-team.jpg',
+        'assets/css/styles.css','assets/css/qc.css',
         'assets/js/site.js','robots.txt','sitemap.xml'
     ]
     for rel in required:
