@@ -65,12 +65,13 @@
     const caption=escapeHtml(item.caption||'');
     const alt=escapeHtml(item.alt_text||'');
     const preview=escapeHtml(item.preview_url||item.public_url||'');
+    const largePreview=escapeHtml(item.large_preview_url||item.large_url||preview);
     const validationCode=escapeHtml(item.validation_code||'');
     const validationMessage=escapeHtml(item.validation_message||'');
 
     el.innerHTML=`
       <label class="admin-card-select"><input type="checkbox" data-select-item aria-label="Select ${title}"></label>
-      <button type="button" class="admin-thumb" data-preview-url="${preview}" data-preview-title="${title}" aria-label="Open larger preview of ${title}"><span class="admin-empty-thumb">Load preview</span></button>
+      <button type="button" class="admin-thumb" data-preview-url="${preview}" data-large-preview-url="${largePreview}" data-preview-title="${title}" aria-label="Open larger preview of ${title}"><span class="admin-empty-thumb">Load preview</span></button>
       <div class="admin-fields">
         <div class="admin-meta"><strong>${title}</strong><span>Status: ${status}</span><span>Uploaded: ${uploaded||'Unknown'}</span>${exif?`<span>Photo date: ${exif}</span>`:''}${source?`<span>Source: ${source}</span>`:''}${validationCode?`<span class="admin-validation-error">Validation: ${validationCode}${validationMessage?` — ${validationMessage}`:''}</span>`:''}</div>
         <select data-field="category" aria-label="Category for ${title}"><option value="">Unsorted</option>${categoryOptions(item.category)}</select>
@@ -83,20 +84,28 @@
     return el;
   }
 
+  function trackObjectUrl(blob){
+    const objectUrl=URL.createObjectURL(blob);
+    objectUrls.add(objectUrl);
+    return objectUrl;
+  }
+
   function clearObjectUrls(){
     objectUrls.forEach(url=>URL.revokeObjectURL(url));
     objectUrls.clear();
+  }
+
+  async function fetchPreviewObjectUrl(url){
+    const response=await fetch(url,{headers:authHeaders(false)});
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    return trackObjectUrl(await response.blob());
   }
 
   async function hydratePreview(button){
     const previewUrl=button.dataset.previewUrl;
     if(!previewUrl)return;
     try{
-      const response=await fetch(previewUrl,{headers:authHeaders(false)});
-      if(!response.ok)throw new Error('HTTP '+response.status);
-      const blob=await response.blob();
-      const objectUrl=URL.createObjectURL(blob);
-      objectUrls.add(objectUrl);
+      const objectUrl=await fetchPreviewObjectUrl(previewUrl);
       button.dataset.objectUrl=objectUrl;
       const img=document.createElement('img');
       img.src=objectUrl;
@@ -111,14 +120,26 @@
     list.querySelectorAll('[data-preview-url]').forEach(button=>hydratePreview(button));
   }
 
-  function openPreview(button){
-    const objectUrl=button.dataset.objectUrl;
-    if(!objectUrl||!previewModal)return;
-    previewImage.src=objectUrl;
-    previewImage.alt=button.dataset.previewTitle||'Media preview';
-    previewTitle.textContent=button.dataset.previewTitle||'Media preview';
-    previewModal.hidden=false;
-    previewClose?.focus();
+  async function openPreview(button){
+    if(!previewModal)return;
+    const sourceUrl=button.dataset.largePreviewUrl||button.dataset.previewUrl;
+    if(!sourceUrl)return;
+    try{
+      let objectUrl=button.dataset.largeObjectUrl;
+      if(!objectUrl){
+        msg('Loading larger preview…');
+        objectUrl=await fetchPreviewObjectUrl(sourceUrl);
+        button.dataset.largeObjectUrl=objectUrl;
+      }
+      previewImage.src=objectUrl;
+      previewImage.alt=button.dataset.previewTitle||'Media preview';
+      previewTitle.textContent=button.dataset.previewTitle||'Media preview';
+      previewModal.hidden=false;
+      previewClose?.focus();
+      msg('Larger preview loaded.');
+    }catch(error){
+      msg('Unable to load larger preview: '+error.message);
+    }
   }
 
   function closePreview(){
@@ -241,7 +262,7 @@
 
   list?.addEventListener('click',async event=>{
     const previewButton=event.target.closest('[data-preview-url]');
-    if(previewButton){openPreview(previewButton);return;}
+    if(previewButton){await openPreview(previewButton);return;}
     const button=event.target.closest('button[data-action]');
     if(!button)return;
     const el=button.closest('.admin-card');
