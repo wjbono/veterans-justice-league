@@ -63,7 +63,7 @@ async function syncIncoming(env){
         scanned++;
         const id=idForKey(object.key);
         const category=categoryFromKey(object.key);
-        const existing=await env.DB.prepare('SELECT id,status FROM media WHERE object_key=?').bind(object.key).first();
+        const existing=await env.DB.prepare('SELECT id,status,validation_code FROM media WHERE object_key=?').bind(object.key).first();
         const validation=await inspectUpload(env,object);
         const status=validation.ok?'pending':'rejected';
         const rejectedAt=validation.ok?null:new Date().toISOString();
@@ -81,6 +81,9 @@ async function syncIncoming(env){
             uploaded_at=excluded.uploaded_at,
             validation_code=excluded.validation_code,
             validation_message=excluded.validation_message,
+            status=CASE WHEN excluded.validation_code IS NOT NULL THEN 'rejected' ELSE status END,
+            rejected_at=CASE WHEN excluded.validation_code IS NOT NULL THEN excluded.rejected_at ELSE rejected_at END,
+            trash_delete_after=CASE WHEN excluded.validation_code IS NOT NULL THEN excluded.trash_delete_after ELSE trash_delete_after END,
             updated_at=CURRENT_TIMESTAMP
         `).bind(
           id,object.key,prefix,fileName(object.key),validation.ok?validation.contentType:null,
@@ -94,6 +97,10 @@ async function syncIncoming(env){
             env,id,validation.ok?'upload':'ingest_rejected',null,status,'sync',
             {source_folder:prefix,category,validation_code:validation.ok?null:validation.code,validation_message:validation.ok?null:validation.message}
           );
+        }else if(!validation.ok&&(existing.status!=='rejected'||existing.validation_code!==validation.code)){
+          await history(env,id,'ingest_rejected',existing.status,'rejected','sync',{
+            source_folder:prefix,category,validation_code:validation.code,validation_message:validation.message
+          });
         }
       }
       cursor=page.truncated?page.cursor:undefined;
@@ -215,7 +222,8 @@ async function listAdmin(env,url){
   const items=(result.results||[]).map(item=>({
     ...item,
     featured:!!item.featured,
-    preview_url:`${url.origin}/media/${encodeURIComponent(item.id)}?admin=1&size=thumb`
+    preview_url:`${url.origin}/media/${encodeURIComponent(item.id)}?admin=1&size=thumb`,
+    large_preview_url:`${url.origin}/media/${encodeURIComponent(item.id)}?admin=1&size=original`
   }));
   return json({items});
 }
@@ -225,12 +233,17 @@ async function serveMedia(env,id,adminAccess,size='web'){
   if(!row)return new Response('Not found',{status:404});
   if(row.status!=='published'&&!adminAccess)return new Response('Not found',{status:404});
 
-  let key;
-  if(size==='thumb')key=row.thumb_key||row.web_key||row.large_key||row.object_key;
-  else if(size==='large')key=row.large_key||row.web_key||row.thumb_key||row.object_key;
-  else if(size==='web')key=row.web_key||row.large_key||row.thumb_key||row.object_key;
-  else if(size==='original'&&adminAccess)key=row.object_key;
+  let key=null;
+  if(size==='original'){
+    if(!adminAccess)return new Response('Not found',{status:404});
+    key=row.object_key;
+  }else if(size==='thumb')key=row.thumb_key||row.web_key||row.large_key;
+  else if(size==='large')key=row.large_key||row.web_key||row.thumb_key;
+  else if(size==='web')key=row.web_key||row.large_key||row.thumb_key;
   else return new Response('Not found',{status:404});
+
+  if(!key&&adminAccess)key=row.object_key;
+  if(!key)return new Response('Not found',{status:404});
 
   const object=await env.MEDIA.get(key);
   if(!object)return new Response('Not found',{status:404});
@@ -238,7 +251,7 @@ async function serveMedia(env,id,adminAccess,size='web'){
   object.writeHttpMetadata(headers);
   headers.set('etag',object.httpEtag);
   const derivative=key!==row.object_key;
-  headers.set('cache-control',row.status==='published'?(derivative?'public, max-age=31536000, immutable':'public, max-age=3600'):'private, no-store');
+  headers.set('cache-control',row.status==='published'?(derivative?'public, max-age=31536000, immutable':'private, no-store'):'private, no-store');
   return new Response(object.body,{headers});
 }
 
@@ -277,6 +290,11 @@ async function transition(env,row,action,fields,actor,body={}){
   assertTransition(row,action);
   const now=new Date().toISOString();
   let next=row.status;
+  let approvedAt=row.approved_at||null;
+  let processedAt=row.processed_at||null;
+  let publishedAt=row.published_at||null;
+  let archivedAt=row.archived_at||null;
+  let rejectedAt=row.rejected_at||null;
   let trashDeleteAfter=row.trash_delete_after||null;
 
   if(action==='review')next='review';
@@ -284,13 +302,13 @@ async function transition(env,row,action,fields,actor,body={}){
     if(row.validation_code)throw new Error('INVALID_UPLOAD');
     if(!fields.category)throw new Error('CATEGORY_REQUIRED');
     next='approved';
+    if(!approvedAt)approvedAt=now;
   }
   if(action==='publish'){
     if(row.validation_code)throw new Error('INVALID_UPLOAD');
     if(!fields.category)throw new Error('CATEGORY_REQUIRED');
     const object=await env.MEDIA.head(row.object_key);
     if(!object)throw new Error('SOURCE_MISSING');
-    next='processing';
     await env.DB.prepare(`UPDATE media SET status='processing',updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(row.id).run();
     await history(env,row.id,'processing',row.status,'processing',actor,{note:'Generating thumbnail, web, and lightbox WebP derivatives from the retained R2 original.'});
     try{
@@ -301,34 +319,42 @@ async function transition(env,row,action,fields,actor,body={}){
       throw error;
     }
     next='published';
+    processedAt=now;
+    publishedAt=now;
+    archivedAt=null;
   }
   if(action==='reject'){
     next='rejected';
+    rejectedAt=now;
     trashDeleteAfter=new Date(Date.now()+30*86400000).toISOString();
   }
-  if(action==='archive')next='archived';
-  if(action==='restore')next=row.status==='archived'?'published':'pending';
+  if(action==='archive'){
+    next='archived';
+    archivedAt=now;
+  }
+  if(action==='restore'){
+    if(row.status==='archived'){
+      if(!row.thumb_key||!row.web_key||!row.large_key)throw new Error('DERIVATIVES_MISSING');
+      next='published';
+      archivedAt=null;
+      publishedAt=now;
+    }else{
+      if(row.validation_code)throw new Error('INVALID_UPLOAD');
+      next='pending';
+      rejectedAt=null;
+      trashDeleteAfter=null;
+    }
+  }
 
   await env.DB.prepare(`
     UPDATE media SET
       category=?,gallery=?,caption=?,alt_text=?,featured=?,status=?,reviewer=?,
-      approved_at=CASE WHEN ?='approved' AND approved_at IS NULL THEN ? ELSE approved_at END,
-      processed_at=CASE WHEN ?='published' THEN ? ELSE processed_at END,
-      published_at=CASE WHEN ?='published' THEN ? ELSE published_at END,
-      archived_at=CASE WHEN ?='archived' THEN ? ELSE archived_at END,
-      rejected_at=CASE WHEN ?='rejected' THEN ? ELSE rejected_at END,
-      trash_delete_after=?,
+      approved_at=?,processed_at=?,published_at=?,archived_at=?,rejected_at=?,trash_delete_after=?,
       updated_at=CURRENT_TIMESTAMP
     WHERE id=?
   `).bind(
     fields.category,fields.gallery,fields.caption,fields.alt_text,fields.featured?1:0,next,actor,
-    next,now,
-    next,now,
-    next,now,
-    next,now,
-    next,now,
-    trashDeleteAfter,
-    row.id
+    approvedAt,processedAt,publishedAt,archivedAt,rejectedAt,trashDeleteAfter,row.id
   ).run();
 
   await history(env,row.id,action,row.status,next,actor,{category:fields.category,gallery:fields.gallery});
@@ -349,12 +375,13 @@ function errorResponse(error,headers={}){
   const code=String(error&&error.message||error);
   const mapping={
     INVALID_CATEGORY:[400,'Invalid category.'],
-    INVALID_UPLOAD:[409,'This media item failed ingestion validation and cannot be approved or published until the source object is replaced with a supported image and synchronized again.'],
+    INVALID_UPLOAD:[409,'This media item failed ingestion validation and cannot advance until the source object is replaced with a supported image and synchronized again.'],
     INVALID_TRANSITION:[409,'That media lifecycle action is not valid from the current status.'],
     CATEGORY_REQUIRED:[400,'Category is required before approval or publishing.'],
     SOURCE_MISSING:[409,'The source object is missing from R2.'],
     IMAGE_BINDING_MISSING:[503,'Image processing is not configured. Bind Cloudflare Images to the Worker before publishing media.'],
     IMAGE_TRANSFORM_FAILED:[422,'Cloudflare could not generate the required image derivatives. The item remains approved and is not public.'],
+    DERIVATIVES_MISSING:[409,'Archived media cannot be republished because one or more published derivatives are missing. Reprocess the source image first.'],
     DELETE_REQUIRES_REJECTED:[409,'Only rejected media can be permanently deleted.'],
     DELETE_CONFIRMATION_REQUIRED:[400,'Permanent deletion requires confirm="DELETE".'],
     RETENTION_NOT_EXPIRED:[409,'The rejection retention period has not expired.']
