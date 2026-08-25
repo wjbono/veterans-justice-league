@@ -5,6 +5,9 @@ compatibility_date = "2026-08-24"
 [vars]
 ALLOWED_ORIGINS = "https://wjbono.github.io"
 
+[images]
+binding = "IMAGES"
+
 [[r2_buckets]]
 binding = "MEDIA"
 bucket_name = "vjl-media"
