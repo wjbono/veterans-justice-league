@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Restore exact VJL logo
+      - name: Restore exact VJL logo and recovered media
         run: |
           cat .build-assets/vjl-exact-00.b64 \
               .build-assets/vjl-exact-01.b64 \
@@ -31,8 +31,28 @@ jobs:
               .build-assets/vjl-exact-08.b64 \
               .build-assets/vjl-exact-09.b64 \
               .build-assets/vjl-exact-10.b64 | base64 -d > assets/images/vjl-logo.png
+
+          cat .build-assets/media/housing-00.b64 \
+              .build-assets/media/housing-01.b64 \
+              .build-assets/media/housing-02.b64 | base64 -d > assets/images/vjl-housing.jpg
+          cat .build-assets/media/training-00.b64 \
+              .build-assets/media/training-01.b64 | base64 -d > assets/images/vjl-training.jpg
+          cat .build-assets/media/outreach-00.b64 \
+              .build-assets/media/outreach-01.b64 | base64 -d > assets/images/vjl-outreach.jpg
+          cat .build-assets/media/team-00.b64 \
+              .build-assets/media/team-01.b64 | base64 -d > assets/images/vjl-team.jpg
+
           test "$(wc -c < assets/images/vjl-logo.png)" -eq 32857
+          test "$(wc -c < assets/images/vjl-housing.jpg)" -eq 20836
+          test "$(wc -c < assets/images/vjl-training.jpg)" -eq 15723
+          test "$(wc -c < assets/images/vjl-outreach.jpg)" -eq 17937
+          test "$(wc -c < assets/images/vjl-team.jpg)" -eq 16725
+
           echo "259d6163ff0a2887217a2fd300448aef381fb85cc7df4e479f43738f983b7956  assets/images/vjl-logo.png" | sha256sum -c -
+          echo "e490186a87e34cdc271337e2c07a4d692700378d86abc65587bb7a08342b0d0d  assets/images/vjl-housing.jpg" | sha256sum -c -
+          echo "6aa4941b392fb298ab0f99fc6bcecbac6defd4952715f4950d35a1b514d5529a  assets/images/vjl-training.jpg" | sha256sum -c -
+          echo "0e55cef04d39e142d2347b30695c1236957cf8dff702affd7812fd5b8a639b88  assets/images/vjl-outreach.jpg" | sha256sum -c -
+          echo "27cadf656015e4b23dc154a7f1c8e3998cd2bf3e4b58036622ade531e50fe259  assets/images/vjl-team.jpg" | sha256sum -c -
           rm -rf .build-assets
       - name: Prepare static launch metadata
         run: python3 .github/scripts/prepare_site.py
@@ -48,6 +68,10 @@ jobs:
           cp -R assets admin _site/
           test -f _site/index.html
           test -f _site/assets/images/vjl-logo.png
+          test -f _site/assets/images/vjl-housing.jpg
+          test -f _site/assets/images/vjl-training.jpg
+          test -f _site/assets/images/vjl-outreach.jpg
+          test -f _site/assets/images/vjl-team.jpg
           test -f _site/admin/index.html
           test ! -e _site/BACKLOG.md
           test ! -e _site/README.md
