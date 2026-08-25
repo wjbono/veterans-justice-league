@@ -1,6 +1,7 @@
 (()=>{
   const grid=document.querySelector('[data-gallery-groups]');
   const modal=document.querySelector('[data-gallery-modal]');
+  const pageShell=document.querySelector('.site');
   if(!grid||!modal)return;
 
   const modalTitle=modal.querySelector('[data-gallery-title]');
@@ -63,10 +64,11 @@
       card.type='button';
       card.className='gallery-group-card';
       card.dataset.galleryId=gallery.id;
-      card.setAttribute('aria-label',`Open ${gallery.title} gallery`);
+      card.setAttribute('aria-label',`Open ${gallery.title} gallery, ${gallery.items.length} photo${gallery.items.length===1?'':'s'}`);
 
       const image=document.createElement('img');
       image.loading='lazy';
+      image.decoding='async';
       image.src=gallery.cover||gallery.items[0]?.url||'';
       image.alt='';
 
@@ -94,6 +96,7 @@
     lastFocus=trigger||document.activeElement;
     modal.hidden=false;
     document.body.classList.add('modal-open');
+    if(pageShell){pageShell.inert=true;pageShell.setAttribute('aria-hidden','true')}
     updateModal();
     requestAnimationFrame(()=>closeButton?.focus());
   }
@@ -101,16 +104,25 @@
   function closeGallery(){
     modal.hidden=true;
     document.body.classList.remove('modal-open');
+    if(pageShell){pageShell.inert=false;pageShell.removeAttribute('aria-hidden')}
     const focusTarget=lastFocus;
     activeGallery=null;
     activeIndex=0;
     if(focusTarget&&typeof focusTarget.focus==='function')focusTarget.focus();
   }
 
+  function preloadNeighbor(offset){
+    if(!activeGallery||activeGallery.items.length<2)return;
+    const i=(activeIndex+offset+activeGallery.items.length)%activeGallery.items.length;
+    const nextImage=new Image();
+    nextImage.src=activeGallery.items[i].url;
+  }
+
   function updateModal(){
     if(!activeGallery)return;
     const item=activeGallery.items[activeIndex];
     modalTitle.textContent=activeGallery.title;
+    modalImage.decoding='async';
     modalImage.src=item.url;
     modalImage.alt=item.alt||item.caption||'Veterans Justice League photo';
     modalCaption.textContent=item.caption||'';
@@ -118,6 +130,7 @@
     const multiple=activeGallery.items.length>1;
     prevButton.hidden=!multiple;
     nextButton.hidden=!multiple;
+    if(multiple){preloadNeighbor(1);preloadNeighbor(-1)}
   }
 
   function previous(){
