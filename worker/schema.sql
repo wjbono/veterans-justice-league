@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS media (
   alt_text TEXT,
   gallery TEXT,
   featured INTEGER NOT NULL DEFAULT 0,
+  validation_code TEXT,
+  validation_message TEXT,
   status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','review','approved','processing','published','archived','rejected')),
   approved_at TEXT,
   processed_at TEXT,
@@ -31,6 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_media_status ON media(status);
 CREATE INDEX IF NOT EXISTS idx_media_category ON media(category);
 CREATE INDEX IF NOT EXISTS idx_media_gallery ON media(gallery);
 CREATE INDEX IF NOT EXISTS idx_media_uploaded ON media(uploaded_at DESC);
+CREATE INDEX IF NOT EXISTS idx_media_validation ON media(validation_code);
 
 CREATE TABLE IF NOT EXISTS galleries (
   id TEXT PRIMARY KEY,
