@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FILES = [
     'index.html','about.html','programs.html','housing.html','behind-the-wall.html',
     'outreach.html','gallery.html','events.html','contact.html','team.html','404.html',
-    'assets/js/site.js','assets/js/config.js','assets/js/gallery.js',
+    'assets/js/site.js','assets/js/config.js','assets/js/home-media.js','assets/js/gallery.js',
     'assets/css/styles.css','assets/css/qc.css','assets/css/gallery.css',
 ]
 FORBIDDEN = {
