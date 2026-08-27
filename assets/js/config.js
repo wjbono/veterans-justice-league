@@ -1,5 +1,5 @@
 window.VJL_CONFIG={
-  API_BASE:'',
+  API_BASE:'https://veterans-justice-league.william-james-bono-96c.workers.dev',
   STATIC_GALLERIES:[
     {
       id:'housing',
