@@ -40,8 +40,10 @@ jobs:
           node --check assets/js/config.js
           node --check assets/js/home-media.js
           node --check assets/js/gallery.js
+          node --check assets/js/admin-auth.js
           node --check assets/js/admin.js
           node --check assets/js/admin-upload.js
+          node --check assets/js/admin-users.js
           node --check worker/src/media-policy.js
           node --check worker/src/derivative-policy.js
           node --check worker/src/exif-date.js
@@ -75,6 +77,7 @@ jobs:
           test -f _site/index.html
           test -f _site/assets/images/vjl-logo.png
           test -f _site/admin/index.html
+          test -f _site/admin/users.html
           test ! -e _site/BACKLOG.md
           test ! -e _site/README.md
           test ! -e _site/LAUNCH_RUNBOOK.md
@@ -109,12 +112,17 @@ jobs:
             'contact.html' \
             'team.html' \
             'admin/' \
+            'admin/users.html' \
             'assets/css/styles.css' \
             'assets/css/gallery.css' \
+            'assets/css/admin.css' \
             'assets/js/site.js' \
             'assets/js/home-media.js' \
             'assets/js/gallery.js' \
+            'assets/js/admin-auth.js' \
+            'assets/js/admin.js' \
             'assets/js/admin-upload.js' \
+            'assets/js/admin-users.js' \
             'assets/images/vjl-logo.png'; do
             echo "Checking ${base}${path}"
             curl --fail --silent --show-error --location --retry 4 --retry-delay 2 --output /dev/null "${base}${path}"
@@ -145,9 +153,10 @@ jobs:
           "$chrome" --headless --no-sandbox --disable-gpu --hide-scrollbars --virtual-time-budget=3000 --window-size=390,844 --screenshot=/tmp/vjl-browser-qc/mobile-gallery.png "${base}gallery.html"
           "$chrome" --headless --no-sandbox --disable-gpu --hide-scrollbars --virtual-time-budget=3000 --window-size=390,844 --screenshot=/tmp/vjl-browser-qc/mobile-contact.png "${base}contact.html"
       - name: Upload browser QC screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: browser-qc-${{ github.run_number }}
           path: /tmp/vjl-browser-qc/*.png
           retention-days: 1
-          if-no-files-found: error
+          if-no-files-found: ignore
