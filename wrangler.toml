@@ -1,4 +1,4 @@
-name = "vjl-media-api"
+name = "veterans-justice-league"
 main = "worker/src/index.js"
 compatibility_date = "2026-08-24"
 workers_dev = true
