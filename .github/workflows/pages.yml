@@ -41,10 +41,12 @@ jobs:
           node --check assets/js/home-media.js
           node --check assets/js/gallery.js
           node --check assets/js/admin.js
+          node --check assets/js/admin-upload.js
           node --check worker/src/media-policy.js
           node --check worker/src/derivative-policy.js
           node --check worker/src/exif-date.js
           node --check worker/src/index.js
+          node --check worker/src/main.js
           node --check worker/tests/media-policy.test.mjs
           node --check worker/tests/derivative-policy.test.mjs
           node --check worker/tests/exif-date.test.mjs
@@ -106,11 +108,13 @@ jobs:
             'events.html' \
             'contact.html' \
             'team.html' \
+            'admin/' \
             'assets/css/styles.css' \
             'assets/css/gallery.css' \
             'assets/js/site.js' \
             'assets/js/home-media.js' \
             'assets/js/gallery.js' \
+            'assets/js/admin-upload.js' \
             'assets/images/vjl-logo.png'; do
             echo "Checking ${base}${path}"
             curl --fail --silent --show-error --location --retry 4 --retry-delay 2 --output /dev/null "${base}${path}"
