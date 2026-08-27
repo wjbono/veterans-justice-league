@@ -15,7 +15,7 @@ bucket_name = "vjl-media"
 [[d1_databases]]
 binding = "DB"
 database_name = "vjl-media"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "d06763c3-049c-404e-b488-8ab821b36d36"
 
 [triggers]
 crons = ["*/10 * * * *"]
