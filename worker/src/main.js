@@ -22,6 +22,34 @@ function authorized(env,req){
   return Boolean(env.ADMIN_TOKEN&&header===`Bearer ${env.ADMIN_TOKEN}`);
 }
 
+function imageCompatibleEnv(env){
+  if(!env.IMAGES||typeof env.IMAGES.input!=='function')return env;
+  const images=env.IMAGES;
+  const wrappedImages=new Proxy(images,{
+    get(target,prop,receiver){
+      if(prop==='input'){
+        return value=>{
+          let input=value;
+          if(value instanceof ArrayBuffer){
+            input=new Blob([value]).stream();
+          }else if(ArrayBuffer.isView(value)){
+            input=new Blob([value]).stream();
+          }
+          return target.input(input);
+        };
+      }
+      const member=Reflect.get(target,prop,receiver);
+      return typeof member==='function'?member.bind(target):member;
+    }
+  });
+  return new Proxy(env,{
+    get(target,prop,receiver){
+      if(prop==='IMAGES')return wrappedImages;
+      return Reflect.get(target,prop,receiver);
+    }
+  });
+}
+
 function safeName(name){
   const cleaned=String(name||'image')
     .normalize('NFKD')
@@ -86,7 +114,7 @@ async function uploadMedia(req,env,ctx,url,corsHeaders){
       'Origin':req.headers.get('Origin')||''
     }
   });
-  const syncResponse=await worker.fetch(syncRequest,env,ctx);
+  const syncResponse=await worker.fetch(syncRequest,imageCompatibleEnv(env),ctx);
   const sync=await syncResponse.json().catch(()=>({}));
   if(!syncResponse.ok){
     return json({error:'Files reached R2, but the review queue sync failed.',uploaded,sync},500,corsHeaders);
@@ -141,10 +169,10 @@ export default{
       try{return await cleanupOrphans(req,env,corsHeaders);}
       catch(error){return json({error:'Cleanup failed.',detail:String(error&&error.message||error)},500,corsHeaders);}
     }
-    return worker.fetch(req,env,ctx);
+    return worker.fetch(req,imageCompatibleEnv(env),ctx);
   },
 
   async scheduled(event,env,ctx){
-    return worker.scheduled(event,env,ctx);
+    return worker.scheduled(event,imageCompatibleEnv(env),ctx);
   }
 };
