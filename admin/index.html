@@ -7,16 +7,17 @@
   <meta name="color-scheme" content="light">
   <title>Media Manager | Veterans Justice League</title>
   <link rel="stylesheet" href="../assets/css/styles.css">
-  <link rel="stylesheet" href="../assets/css/admin.css?v=20260827-auth1">
+  <link rel="stylesheet" href="../assets/css/admin.css?v=20260827-multiuser1">
 </head>
 <body>
 <div class="site">
   <header class="header">
     <div class="wrap header-inner">
       <a class="brand" href="../index.html"><img class="logo" src="../assets/images/vjl-logo.png" alt="Veterans Justice League"></a>
-      <div class="admin-header-title">Media Manager</div>
+      <div class="admin-header-title">Website Administration</div>
       <div class="admin-account" data-admin-account hidden>
-        <span data-admin-user></span>
+        <div class="admin-account-copy"><strong data-admin-user></strong><span data-admin-role></span></div>
+        <a class="btn btn-outline" href="users.html" data-users-link hidden>Users</a>
         <button class="btn btn-outline admin-signout" type="button" data-sign-out>Sign out</button>
       </div>
       <a class="btn btn-outline admin-gallery-link" href="../gallery.html">Public Gallery</a>
@@ -25,17 +26,49 @@
 
   <main class="admin-shell" data-admin-root>
     <div class="wrap">
-      <section class="admin-auth" data-login-panel>
+      <section class="admin-auth" data-login-panel hidden>
         <div class="admin-auth-card">
           <p class="eyebrow">Private administration</p>
-          <h1>Sign in to Media Manager</h1>
-          <p>Manage Veterans Justice League photos, captions, categories, and publishing.</p>
+          <h1>Sign in</h1>
+          <p>Use your Veterans Justice League website account.</p>
           <form class="admin-login-form" data-login-form>
-            <label>Username<input type="text" name="username" data-login-username autocomplete="username" value="admin" required></label>
+            <label>Username<input type="text" name="username" data-login-username autocomplete="username" required></label>
             <label>Password<input type="password" name="password" data-login-password autocomplete="current-password" required></label>
             <button class="primary" type="submit" data-login-submit>Sign in</button>
           </form>
-          <div class="status-box" data-login-status role="status" aria-live="polite">Enter your admin credentials.</div>
+          <div class="status-box" data-login-status role="status" aria-live="polite">Enter your username and password.</div>
+        </div>
+      </section>
+
+      <section class="admin-auth" data-bootstrap-panel hidden>
+        <div class="admin-auth-card">
+          <p class="eyebrow">One-time setup</p>
+          <h1>Create the first Administrator</h1>
+          <p>This is required only once. The setup key is the existing Cloudflare <code>ADMIN_TOKEN</code>. After the first account is created, normal users never use that key.</p>
+          <form class="admin-login-form" data-bootstrap-form>
+            <label>Your name<input type="text" data-bootstrap-name autocomplete="name" required></label>
+            <label>Username<input type="text" data-bootstrap-username autocomplete="username" pattern="[A-Za-z0-9._-]{3,64}" required></label>
+            <label>Password<input type="password" data-bootstrap-password autocomplete="new-password" minlength="12" required></label>
+            <label>Confirm password<input type="password" data-bootstrap-confirm autocomplete="new-password" minlength="12" required></label>
+            <label>Setup key<input type="password" data-bootstrap-key autocomplete="off" required></label>
+            <button class="primary" type="submit" data-bootstrap-submit>Create Administrator</button>
+          </form>
+          <div class="status-box" data-bootstrap-status role="status" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="admin-auth" data-password-panel hidden>
+        <div class="admin-auth-card">
+          <p class="eyebrow">Account security</p>
+          <h1>Change your password</h1>
+          <p>An administrator reset this account, so a new password is required before website administration can continue.</p>
+          <form class="admin-login-form" data-password-form>
+            <label>Current or temporary password<input type="password" data-current-password autocomplete="current-password" required></label>
+            <label>New password<input type="password" data-new-password autocomplete="new-password" minlength="12" required></label>
+            <label>Confirm new password<input type="password" data-confirm-password autocomplete="new-password" minlength="12" required></label>
+            <button class="primary" type="submit" data-password-submit>Change password</button>
+          </form>
+          <div class="status-box" data-password-status role="status" aria-live="polite"></div>
         </div>
       </section>
 
@@ -49,9 +82,7 @@
         </div>
 
         <section class="admin-panel admin-upload-panel" data-upload-panel>
-          <div class="admin-panel-head">
-            <div><h2>Upload photos</h2><p>Add up to 10 JPEG, PNG, or WebP images at a time.</p></div>
-          </div>
+          <div class="admin-panel-head"><div><h2>Upload photos</h2><p>Add up to 10 JPEG, PNG, or WebP images at a time.</p></div></div>
           <div class="admin-toolbar admin-upload-toolbar">
             <input type="file" multiple accept="image/jpeg,image/png,image/webp" data-direct-upload-files aria-label="Choose photos">
             <select data-direct-upload-category aria-label="Website section">
@@ -69,10 +100,7 @@
         </section>
 
         <section class="admin-panel">
-          <div class="admin-panel-head">
-            <div><h2>Review &amp; publish</h2><p>Filter the queue, edit details, and move photos through the publishing process.</p></div>
-          </div>
-
+          <div class="admin-panel-head"><div><h2>Review &amp; publish</h2><p>Filter the queue, edit details, and move photos through the publishing process.</p></div></div>
           <div class="admin-controls">
             <div class="admin-toolbar">
               <label class="admin-filter-label">Status
@@ -120,12 +148,11 @@
               <button class="secondary" data-bulk-action="archive">Archive</button>
             </div>
           </div>
-
           <div class="status-box" data-admin-status role="status" aria-live="polite">Loading…</div>
           <div class="admin-grid" data-admin-list></div>
         </section>
 
-        <details class="admin-advanced">
+        <details class="admin-advanced" data-admin-advanced hidden>
           <summary>Advanced maintenance</summary>
           <div class="admin-toolbar admin-advanced-tools">
             <button class="secondary" type="button" data-sync>Sync incoming folders</button>
@@ -159,7 +186,8 @@
 
 <script src="../assets/js/site.js?v=20260824-2026"></script>
 <script src="../assets/js/config.js?v=20260824-2026"></script>
-<script src="../assets/js/admin.js?v=20260827-auth1"></script>
-<script src="../assets/js/admin-upload.js?v=20260827-auth1"></script>
+<script src="../assets/js/admin-auth.js?v=20260827-multiuser1"></script>
+<script src="../assets/js/admin.js?v=20260827-multiuser1"></script>
+<script src="../assets/js/admin-upload.js?v=20260827-multiuser1"></script>
 </body>
 </html>
