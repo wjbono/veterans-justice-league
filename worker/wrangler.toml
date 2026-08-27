@@ -1,5 +1,5 @@
 name = "veterans-justice-league"
-main = "src/index.js"
+main = "src/main.js"
 compatibility_date = "2026-08-24"
 
 [vars]
