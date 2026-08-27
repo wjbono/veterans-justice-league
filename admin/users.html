@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="color-scheme" content="light">
+  <title>User Administration | Veterans Justice League</title>
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <link rel="stylesheet" href="../assets/css/admin.css?v=20260827-multiuser1">
+</head>
+<body>
+<div class="site">
+  <header class="header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../index.html"><img class="logo" src="../assets/images/vjl-logo.png" alt="Veterans Justice League"></a>
+      <div class="admin-header-title">Website Administration</div>
+      <div class="admin-account" data-users-account hidden>
+        <div class="admin-account-copy"><strong data-users-current-name></strong><span>Administrator</span></div>
+        <a class="btn btn-outline" href="index.html">Media Manager</a>
+        <button class="btn btn-outline admin-signout" type="button" data-users-sign-out>Sign out</button>
+      </div>
+      <a class="btn btn-outline admin-gallery-link" href="../gallery.html">Public Gallery</a>
+    </div>
+  </header>
+
+  <main class="admin-shell" data-users-root>
+    <div class="wrap">
+      <section class="admin-auth" data-users-access-panel>
+        <div class="admin-auth-card">
+          <p class="eyebrow">Private administration</p>
+          <h1>User Administration</h1>
+          <p data-users-access-message>Checking your account…</p>
+          <a class="btn" href="index.html">Go to Media Manager</a>
+        </div>
+      </section>
+
+      <section data-users-workspace hidden>
+        <div class="admin-page-head">
+          <div>
+            <p class="eyebrow">Administrator only</p>
+            <h1>Users</h1>
+            <p class="section-intro">Create individual website accounts, assign access, reset passwords, and disable or remove accounts.</p>
+          </div>
+        </div>
+
+        <section class="admin-panel">
+          <div class="admin-panel-head">
+            <div><h2>Create user</h2><p>New users receive a temporary password and must change it the first time they sign in.</p></div>
+          </div>
+          <form class="admin-user-create" data-user-create-form>
+            <label>Name<input type="text" data-create-name required maxlength="100"></label>
+            <label>Username<input type="text" data-create-username required pattern="[A-Za-z0-9._-]{3,64}"></label>
+            <label>Role<select data-create-role><option value="editor">Editor</option><option value="admin">Administrator</option></select></label>
+            <label>Temporary password<input type="password" data-create-password required minlength="12" autocomplete="new-password"></label>
+            <button class="primary" type="submit" data-create-user>Create user</button>
+          </form>
+          <div class="status-box" data-create-status role="status" aria-live="polite">Editors can manage media. Administrators can also manage users and advanced maintenance.</div>
+        </section>
+
+        <section class="admin-panel">
+          <div class="admin-panel-head">
+            <div><h2>Existing users</h2><p>The final active Administrator cannot be disabled, deleted, or demoted.</p></div>
+            <button class="secondary admin-standalone-button" type="button" data-users-refresh>Refresh</button>
+          </div>
+          <div class="status-box" data-users-status role="status" aria-live="polite">Loading users…</div>
+          <div class="admin-users-list" data-users-list></div>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <img class="footer-logo" src="../assets/images/vjl-logo.png" alt="Veterans Justice League">
+        <div class="footer-info"><strong>Veterans Justice League</strong>3617 Betty Dr. STE G<br>Colorado Springs, CO 80917<br><a href="tel:+17193068947">719-306-8947</a></div>
+        <div class="footer-links"><a href="../about.html">About</a><a href="../programs.html">Programs</a><a href="../gallery.html">Gallery</a><a href="../events.html">Events</a><a href="../contact.html">Contact</a></div>
+      </div>
+      <div class="fine">© 2026 Veterans Justice League. Private website administration.</div>
+    </div>
+  </footer>
+</div>
+
+<script src="../assets/js/site.js?v=20260824-2026"></script>
+<script src="../assets/js/config.js?v=20260824-2026"></script>
+<script src="../assets/js/admin-auth.js?v=20260827-multiuser1"></script>
+<script src="../assets/js/admin-users.js?v=20260827-multiuser1"></script>
+</body>
+</html>
