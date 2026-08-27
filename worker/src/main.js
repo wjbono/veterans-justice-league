@@ -1,5 +1,5 @@
 import worker from './index.js';
-import {CATEGORIES,MAX_UPLOAD_BYTES,validateUpload} from './media-policy.js';
+import {CATEGORIES,INCOMING,MAX_UPLOAD_BYTES,validateUpload} from './media-policy.js';
 
 const json=(data,status=200,headers={})=>new Response(JSON.stringify(data),{
   status,
@@ -22,32 +22,67 @@ function authorized(env,req){
   return Boolean(env.ADMIN_TOKEN&&header===`Bearer ${env.ADMIN_TOKEN}`);
 }
 
-function imageCompatibleEnv(env){
-  if(!env.IMAGES||typeof env.IMAGES.input!=='function')return env;
-  const images=env.IMAGES;
-  const wrappedImages=new Proxy(images,{
-    get(target,prop,receiver){
-      if(prop==='input'){
-        return value=>{
-          let input=value;
-          if(value instanceof ArrayBuffer){
-            input=new Blob([value]).stream();
-          }else if(ArrayBuffer.isView(value)){
-            input=new Blob([value]).stream();
-          }
-          return target.input(input);
-        };
+function compatibleEnv(env){
+  const markerKeys=new Set(INCOMING);
+
+  let wrappedImages=env.IMAGES;
+  if(env.IMAGES&&typeof env.IMAGES.input==='function'){
+    const images=env.IMAGES;
+    wrappedImages=new Proxy(images,{
+      get(target,prop,receiver){
+        if(prop==='input'){
+          return value=>{
+            let input=value;
+            if(value instanceof ArrayBuffer){
+              input=new Blob([value]).stream();
+            }else if(ArrayBuffer.isView(value)){
+              input=new Blob([value]).stream();
+            }
+            return target.input(input);
+          };
+        }
+        const member=Reflect.get(target,prop,receiver);
+        return typeof member==='function'?member.bind(target):member;
       }
-      const member=Reflect.get(target,prop,receiver);
-      return typeof member==='function'?member.bind(target):member;
-    }
-  });
+    });
+  }
+
+  let wrappedMedia=env.MEDIA;
+  if(env.MEDIA&&typeof env.MEDIA.list==='function'){
+    const media=env.MEDIA;
+    wrappedMedia=new Proxy(media,{
+      get(target,prop,receiver){
+        if(prop==='list'){
+          return async options=>{
+            const page=await target.list(options);
+            return {...page,objects:(page.objects||[]).filter(object=>!markerKeys.has(object.key))};
+          };
+        }
+        const member=Reflect.get(target,prop,receiver);
+        return typeof member==='function'?member.bind(target):member;
+      }
+    });
+  }
+
   return new Proxy(env,{
     get(target,prop,receiver){
       if(prop==='IMAGES')return wrappedImages;
+      if(prop==='MEDIA')return wrappedMedia;
       return Reflect.get(target,prop,receiver);
     }
   });
+}
+
+async function cleanupFolderMarkerRows(env){
+  let removed=0;
+  for(const objectKey of INCOMING){
+    const row=await env.DB.prepare('SELECT id FROM media WHERE object_key=?').bind(objectKey).first();
+    if(!row)continue;
+    await env.DB.prepare('DELETE FROM media_history WHERE media_id=?').bind(row.id).run();
+    await env.DB.prepare('DELETE FROM media WHERE id=?').bind(row.id).run();
+    removed++;
+  }
+  return removed;
 }
 
 function safeName(name){
@@ -107,6 +142,7 @@ async function uploadMedia(req,env,ctx,url,corsHeaders){
     uploaded.push({name:item.file.name,key:item.key,bytes:item.bytes.byteLength});
   }
 
+  await cleanupFolderMarkerRows(env);
   const syncRequest=new Request(`${url.origin}/api/admin/sync`,{
     method:'POST',
     headers:{
@@ -114,7 +150,7 @@ async function uploadMedia(req,env,ctx,url,corsHeaders){
       'Origin':req.headers.get('Origin')||''
     }
   });
-  const syncResponse=await worker.fetch(syncRequest,imageCompatibleEnv(env),ctx);
+  const syncResponse=await worker.fetch(syncRequest,compatibleEnv(env),ctx);
   const sync=await syncResponse.json().catch(()=>({}));
   if(!syncResponse.ok){
     return json({error:'Files reached R2, but the review queue sync failed.',uploaded,sync},500,corsHeaders);
@@ -169,10 +205,15 @@ export default{
       try{return await cleanupOrphans(req,env,corsHeaders);}
       catch(error){return json({error:'Cleanup failed.',detail:String(error&&error.message||error)},500,corsHeaders);}
     }
-    return worker.fetch(req,imageCompatibleEnv(env),ctx);
+    if(url.pathname==='/api/admin/sync'&&req.method==='POST'){
+      try{await cleanupFolderMarkerRows(env);}
+      catch(error){return json({error:'Folder marker cleanup failed.',detail:String(error&&error.message||error)},500,corsHeaders);}
+    }
+    return worker.fetch(req,compatibleEnv(env),ctx);
   },
 
   async scheduled(event,env,ctx){
-    return worker.scheduled(event,imageCompatibleEnv(env),ctx);
+    ctx.waitUntil(cleanupFolderMarkerRows(env));
+    return worker.scheduled(event,compatibleEnv(env),ctx);
   }
 };
