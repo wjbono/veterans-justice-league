@@ -1,6 +1,6 @@
 # VJL Cloudflare media backend
 
-This directory contains the deployable Worker source and D1 schema for the locked VJL media workflow.
+This directory contains the deployable Worker source and D1 schema for the Veterans Justice League media workflow and private website administration.
 
 ## Expected Cloudflare resources
 
@@ -9,6 +9,44 @@ This directory contains the deployable Worker source and D1 schema for the locke
 - Worker: `vjl-media-api`
 - Cloudflare Images binding: `IMAGES`
 - Worker secret: `ADMIN_TOKEN`
+
+`ADMIN_TOKEN` is no longer a normal client login credential. It is retained server-side as the internal credential used by the authentication wrapper to call the existing media engine, and as the one-time setup key used to create the first Administrator account. After bootstrap, normal users sign in only with their own usernames and passwords.
+
+## Multi-user administration
+
+D1 is authoritative for administrator/editor accounts and sessions.
+
+Roles:
+
+- **Administrator** — full media management, user management, and advanced maintenance.
+- **Editor** — upload, review, approve, publish, archive, reject, caption, categorize, and otherwise manage media. Editors cannot manage users or advanced maintenance.
+
+The first Administrator is created once through `/admin/` after deployment. The page detects that no users exist and presents the one-time setup form. The setup form requires the existing `ADMIN_TOKEN`, a display name, username, and password. Once the first account exists, the bootstrap endpoint refuses to create another bootstrap administrator.
+
+Administrators then use `/admin/users.html` to:
+
+- create users
+- edit display names and usernames
+- assign Administrator or Editor roles
+- enable or disable accounts
+- reset passwords
+- delete accounts
+- view account status and last sign-in information
+
+New users and password-reset users receive a temporary password and are forced to change it before any administration endpoint can be used. The final active Administrator cannot be disabled, deleted, or demoted. A signed-in Administrator also cannot disable, delete, or demote their own account through the user-management UI/API.
+
+Security behavior:
+
+- Passwords are salted and hashed with PBKDF2-HMAC-SHA-256 before storage. Plaintext passwords are never stored.
+- Each session uses a random opaque token. Only a SHA-256 hash of that token is stored in D1.
+- Sessions expire after seven days and can be revoked immediately.
+- Password changes/resets revoke existing sessions for that user.
+- Disabling or deleting a user revokes that user's sessions.
+- Five failed sign-in attempts within the login window temporarily lock that username.
+- Media history records the authenticated username for user-driven upload/review/publish actions instead of the old generic `admin` actor.
+- Normal client authentication never exposes or stores `ADMIN_TOKEN` in browser storage.
+
+Authentication tables are created lazily by the Worker on first use and are also included in `schema.sql` for clean deployments.
 
 ## Upload folders
 
@@ -23,7 +61,7 @@ incoming/
   unsorted/
 ```
 
-The Worker scans these prefixes on a schedule and through `POST /api/admin/sync`. Folder placement pre-populates category. `incoming/unsorted/` remains uncategorized and cannot be approved or published until a category is selected.
+The Worker scans these prefixes on a schedule and through `POST /api/admin/sync`. Folder placement pre-populates category. `incoming/unsorted/` remains uncategorized and cannot be approved or published until a category is selected. Zero-byte R2 folder-marker objects are ignored and their stale D1 rows are cleaned automatically.
 
 ## Ingestion validation
 
@@ -31,13 +69,13 @@ Incoming R2 objects are validated before a new D1 media row enters the review wo
 
 Current policy:
 
-- Maximum object size: 20 MB, matching the Cloudflare Images binding input limit used by the publishing pipeline.
+- Maximum object size: 20 MB.
 - Accepted image content: JPEG, PNG, and WebP.
 - The file extension must be `.jpg`, `.jpeg`, `.png`, or `.webp` and must agree with the detected image signature.
-- A stored R2 content type, when present, must agree with the detected image type. `application/octet-stream` is tolerated because some upload tools use it generically.
+- A stored R2 content type, when present, must agree with the detected image type. `application/octet-stream` is tolerated.
 - Empty objects and unsupported/mismatched files fail ingestion validation.
 
-A failed object is retained in R2, recorded in D1 as `rejected`, receives the normal 30-day retention date, and stores `validation_code` plus `validation_message` for the reviewer. It is not automatically deleted. The admin interface surfaces the validation reason. A failed object cannot be approved or published unless the source object is replaced with a supported image, synchronized again, and then restored for review.
+A failed object is retained in R2, recorded in D1 as `rejected`, receives the normal 30-day retention date, and stores `validation_code` plus `validation_message` for the reviewer. It is not automatically deleted. A failed object cannot be approved or published unless the source object is replaced with a supported image, synchronized again, and then restored for review.
 
 The validation policy lives in `src/media-policy.js` and is covered by `tests/media-policy.test.mjs`.
 
@@ -49,23 +87,20 @@ The implemented lifecycle is:
 
 A pending/reviewed item can also move to `REJECTED`.
 
-- New valid R2 objects become `pending` when the incoming folders are synchronized.
+- New valid R2 objects become `pending` when incoming folders are synchronized.
 - Invalid R2 objects are retained but enter `rejected` with the validation reason stored in D1.
 - `review` is an explicit reviewer state.
-- `approve` moves an item to `approved` and requires a category.
-- `publish` is allowed only from `approved`. It moves the item to `processing`, generates the required derivatives, and only then moves the item to `published`.
+- `approve` requires a category.
+- `publish` moves an approved item to `processing`, generates required derivatives, and only then moves it to `published`.
 - If derivative processing fails, the item returns to `approved` and remains non-public.
-- `archive` is allowed only for published media and removes it from public API results without deleting the original or derivatives.
-- Archived media can be republished because its derivatives remain in R2.
-- Rejected media receives a 30-day retention date.
-- Rejected media is **not automatically deleted** after 30 days. Permanent deletion requires an authenticated explicit request with a second confirmation safeguard after the retention period expires.
+- `archive` removes published media from public API results without deleting the original or derivatives.
+- Archived media can be republished while derivatives remain available.
+- Rejected media receives a 30-day retention date and is not automatically destroyed.
 - State changes and important metadata actions are recorded in `media_history`.
 
 ## Image processing and derivatives
 
-Publishing uses the Cloudflare Images binding to process the retained R2 original once and writes optimized WebP derivatives back to R2.
-
-Current derivative policy in `src/derivative-policy.js`:
+Publishing uses the Cloudflare Images binding to process the retained R2 original and writes optimized WebP derivatives back to R2.
 
 | Variant | Maximum width | WebP quality | R2 key |
 | --- | ---: | ---: | --- |
@@ -73,11 +108,9 @@ Current derivative policy in `src/derivative-policy.js`:
 | Normal web | 1280 px | 82 | `published/<media-id>/web.webp` |
 | Large/lightbox | 1920 px | 85 | `published/<media-id>/large.webp` |
 
-Processing uses `fit: scale-down`, so small images are not enlarged. Cloudflare's image transform handles source orientation, and the transform is configured with `metadata: none`; the WebP derivatives therefore do not carry the original EXIF metadata. The original R2 object is retained unchanged for archival/reprocessing purposes and is not the normal public delivery target.
+Processing uses `fit: scale-down`, so small images are not enlarged. Image transforms remove metadata from derivatives. The original R2 object is retained unchanged for archival/reprocessing purposes and is not the normal public delivery target.
 
 D1 stores `thumb_key`, `web_key`, and `large_key` after all required derivatives are created successfully. Partial derivatives are removed if processing fails.
-
-Derivative naming/URL behavior is covered by `tests/derivative-policy.test.mjs`.
 
 ## Public API
 
@@ -89,44 +122,51 @@ Derivative naming/URL behavior is covered by `tests/derivative-policy.test.mjs`.
 - `GET /media/:id?size=web`
 - `GET /media/:id?size=large`
 
-Public API media objects include `thumb_url`, `public_url`/`web_url`, and `large_url`. Gallery covers use the thumbnail variant, normal page content uses the web variant, and the Gallery lightbox prefers the large variant.
+Only `published` media is available publicly. `size=original` is reserved for authenticated administration.
 
-Only `published` media is available through public endpoints. `size=original` is reserved for authenticated admin requests.
+## Authentication API
 
-Published derivatives are served with long-lived immutable cache headers because derivative object keys are replaced only by a deliberate reprocessing/publishing action. Admin/non-public media is served with `private, no-store`.
+Public/setup routes:
 
-## Admin API
+- `GET /api/auth/status` — reports whether first-account bootstrap is required.
+- `POST /api/auth/bootstrap` — one-time first-Administrator creation; requires `Authorization: Bearer <ADMIN_TOKEN>`.
+- `POST /api/auth/login` — username/password sign-in.
+- `GET /api/auth/session` — validate the current bearer session.
+- `POST /api/auth/logout` — revoke the current session.
+- `POST /api/auth/change-password` — change the signed-in user's password and issue a replacement session.
 
-Requires `Authorization: Bearer <ADMIN_TOKEN>`.
+Normal authentication responses issue an opaque bearer session token. Browser storage contains only that session token, never a password or `ADMIN_TOKEN`.
 
-- `POST /api/admin/sync` — scan and validate incoming R2 prefixes into D1
-- `GET /api/admin/media?status=pending` — list media for review
-- `GET /api/admin/media?status=rejected` — review rejected/invalid media and validation reasons
-- `PATCH /api/admin/media/:id` — save metadata or perform lifecycle actions
-- `PATCH /api/admin/media/bulk` — bulk save/category/gallery/approve/publish/reject/archive actions
-- `POST /api/admin/galleries/seed` — seed the default gallery groups
-- `GET /api/admin/galleries` — list gallery definitions
+## Authenticated media API
 
-Supported single-item actions include `review`, `approve`, `publish`, `reject`, `archive`, `restore`, and guarded `permanent-delete`.
+The browser sends the user's opaque session token. The wrapper authenticates and authorizes the user, then forwards allowed media requests to the existing media engine using the server-side `ADMIN_TOKEN`.
 
-Permanent deletion is intentionally excluded from bulk actions.
+- `POST /api/admin/upload`
+- `GET /api/admin/media?status=pending`
+- `GET /api/admin/media?status=rejected`
+- `PATCH /api/admin/media/:id`
+- `PATCH /api/admin/media/bulk`
+- `GET /api/admin/galleries`
+
+Administrators additionally have:
+
+- `POST /api/admin/sync`
+- `POST /api/admin/galleries/seed`
+- `POST /api/admin/cleanup-orphans`
+- `GET /api/admin/users`
+- `POST /api/admin/users`
+- `PATCH /api/admin/users/:id`
+- `DELETE /api/admin/users/:id`
+
+Supported user-management PATCH actions are `update`, `enable`, `disable`, and `reset_password`.
 
 ## Gallery metadata
 
-D1 includes a `galleries` table. The default gallery groups are:
+D1 includes a `galleries` table. Default gallery groups are VJL Housing, Behind-the-Wall Training, Outreach, Events, Team, and Partners.
 
-- VJL Housing
-- Behind-the-Wall Training
-- Outreach
-- Events
-- Team
-- Partners
+The public Gallery page consumes `/api/galleries`. The homepage Recent Moments block consumes `GET /api/media?status=published&limit=4`.
 
-The public Gallery page can consume `/api/galleries` once the Worker is connected. Until then, it uses the matching local placeholder collections in `assets/js/config.js`.
-
-The homepage Recent Moments block also consumes `GET /api/media?status=published&limit=4` after `API_BASE` is configured. Until then, the local placeholder preview remains in place.
-
-## Tests
+## Tests and deployment validation
 
 From the `worker/` directory:
 
@@ -134,25 +174,26 @@ From the `worker/` directory:
 npm test
 ```
 
-The repository's GitHub Pages workflow also runs Worker syntax checks and both policy test suites before publishing the static site. These tests validate pure policy and integration assumptions that do not require a live Cloudflare account; end-to-end R2/D1/Images behavior still must be verified after deployment.
+The GitHub Pages workflow also syntax-checks all public/admin JavaScript and Worker JavaScript, runs the media policy tests, validates the static site, assembles the publishable artifact, and smoke-tests the deployed admin assets.
 
-## After Cloudflare resources are created
+End-to-end authentication, D1, R2, and Images behavior still requires the deployed Worker because GitHub Pages does not execute Worker code.
 
-1. Confirm Cloudflare Images transformations are enabled for the account and that the Images binding is available. Re-check current Cloudflare pricing/account requirements at setup time.
-2. Copy `wrangler.toml.example` to `wrangler.toml`.
-3. Replace the D1 database ID.
-4. Apply `schema.sql` to D1.
-5. Confirm the `IMAGES` binding, `MEDIA` R2 binding, and `DB` D1 binding are configured.
-6. Set `ADMIN_TOKEN` as a Worker secret.
-7. Set `ALLOWED_ORIGINS` to the temporary GitHub Pages origin and, later, the production VJL origin.
-8. Deploy the Worker.
-9. Open `/admin/`, enter the admin token, run **Seed gallery groups**, then **Sync incoming folders**.
-10. Confirm valid test media lands in `pending` and an intentionally unsupported test object lands in `rejected` with a validation reason.
-11. Review and approve a valid test image, publish it, and confirm all three WebP derivatives are written to R2 and their keys are recorded in D1.
-12. Confirm `/media/:id?size=thumb`, `web`, and `large` deliver the expected derivative and that the original is not exposed publicly.
-13. Set `API_BASE` in `assets/js/config.js` to the Worker URL.
-14. Verify the homepage Recent Moments feed, full Gallery page, and admin review workflow against the live Worker/R2/D1/Images backend.
+## Deploy/update procedure
+
+1. Confirm the `IMAGES`, `MEDIA`, and `DB` bindings are configured.
+2. Keep `ADMIN_TOKEN` configured as a strong Worker secret. Do not share it with normal users.
+3. Ensure `ALLOWED_ORIGINS` contains the GitHub Pages origin during development and the production VJL origin after cutover.
+4. Deploy the latest Worker code.
+5. Open `/admin/`.
+6. On the first deployment with no `admin_users` rows, use the one-time setup screen to create the first Administrator. Enter the existing `ADMIN_TOKEN` only into the setup-key field.
+7. Sign out and sign back in with that individual account to verify normal login.
+8. Open `/admin/users.html` and create at least one test Editor account with a temporary password.
+9. Verify the Editor is forced to change that password, can manage media, and cannot open user administration or advanced maintenance.
+10. Verify an Administrator can edit/disable/enable/reset/delete a second account and cannot disable/delete/demote the final active Administrator.
+11. Re-test upload → review → approve → publish → archive → republish and confirm the authenticated username appears in media audit fields.
+
+Existing media, galleries, and media history are not replaced by this authentication upgrade.
 
 ## Important deployment note
 
-The Cloudflare ChatGPT integration is not available for this project, so resource creation and deployment must be performed manually in Cloudflare. The repository is structured so those manual steps are configuration/deployment work rather than additional application design work.
+GitHub Pages deploys the static administration interface automatically. The Cloudflare Worker must still be redeployed separately after Worker source changes. Production DNS should not be changed during this development/testing process.
