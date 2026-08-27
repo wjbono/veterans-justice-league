@@ -1,1 +1,165 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="color-scheme" content="light"><title>Media Review | Veterans Justice League</title><link rel="stylesheet" href="../assets/css/styles.css"><link rel="stylesheet" href="../assets/css/admin.css?v=20260824-2026"></head><body><div class="site"><header class="header"><div class="wrap header-inner"><a class="brand" href="../index.html"><img class="logo" src="../assets/images/vjl-logo.png" alt="Veterans Justice League"></a><div style="font-weight:800">Media Review</div><a class="btn btn-outline" style="margin-left:auto" href="../gallery.html">Public Gallery</a></div></header><main class="admin-shell" data-admin-root><div class="wrap"><p class="eyebrow">Internal workflow</p><h1>Media Review</h1><p class="section-intro">Review R2 uploads, assign categories, captions and alt text, then move media through review, approval, publishing, rejection, and archive states. Unsorted items require a category before approval.</p><div class="admin-controls"><div class="admin-toolbar"><input type="password" placeholder="Admin token" data-token aria-label="Admin token" autocomplete="current-password"><select data-status-filter aria-label="Status filter"><option value="pending">Pending</option><option value="review">Review</option><option value="approved">Approved</option><option value="processing">Processing</option><option value="published">Published</option><option value="archived">Archived</option><option value="rejected">Rejected</option></select><select data-category-filter aria-label="Category filter"><option value="">All categories</option><option value="housing">Housing</option><option value="behind-the-wall">Behind-the-Wall</option><option value="outreach">Outreach</option><option value="events">Events</option><option value="team">Team</option><option value="partners">Partners</option></select><button class="primary" data-refresh>Refresh</button><button class="secondary" data-sync>Sync incoming folders</button><button class="secondary" data-seed-galleries>Seed gallery groups</button></div><div class="admin-bulk"><label><input type="checkbox" data-select-all> Select all loaded</label><select data-bulk-category aria-label="Bulk category"><option value="">Leave category unchanged</option><option value="housing">Housing</option><option value="behind-the-wall">Behind-the-Wall</option><option value="outreach">Outreach</option><option value="events">Events</option><option value="team">Team</option><option value="partners">Partners</option></select><input type="text" placeholder="Gallery slug (optional)" data-bulk-gallery aria-label="Bulk gallery slug"><span class="spacer"></span><button class="secondary" data-bulk-action="save">Apply fields</button><button class="primary" data-bulk-action="approve">Approve</button><button data-bulk-action="publish">Publish</button><button class="danger" data-bulk-action="reject">Reject</button><button class="secondary" data-bulk-action="archive">Archive</button></div></div><div class="status-box" data-admin-status role="status" aria-live="polite">Loading…</div><div style="height:16px"></div><div class="admin-grid" data-admin-list></div></div></main><footer class="footer"><div class="wrap"><div class="footer-grid"><img class="footer-logo" src="../assets/images/vjl-logo.png" alt="Veterans Justice League"><div class="footer-info"><strong>Veterans Justice League</strong>3617 Betty Dr. STE G<br>Colorado Springs, CO 80917<br><a href="tel:+17193068947">719-306-8947</a></div><div class="footer-links"><a href="../about.html">About</a><a href="../programs.html">Programs</a><a href="../gallery.html">Gallery</a><a href="../events.html">Events</a><a href="../contact.html">Contact</a></div></div><div class="fine">© 2026 Veterans Justice League. Internal media workflow for the replacement site.</div></div></footer></div><div class="admin-preview-modal" data-admin-preview hidden role="dialog" aria-modal="true" aria-labelledby="admin-preview-title"><div class="admin-preview-panel"><div class="admin-preview-head"><h2 id="admin-preview-title" data-admin-preview-title>Media preview</h2><button class="admin-preview-close" type="button" data-admin-preview-close aria-label="Close preview">×</button></div><img class="admin-preview-image" data-admin-preview-image src="" alt=""></div></div><script src="../assets/js/site.js?v=20260824-2026"></script><script src="../assets/js/config.js?v=20260824-2026"></script><script src="../assets/js/admin.js?v=20260824-2026"></script><script src="../assets/js/admin-upload.js?v=20260827-1"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="color-scheme" content="light">
+  <title>Media Manager | Veterans Justice League</title>
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <link rel="stylesheet" href="../assets/css/admin.css?v=20260827-auth1">
+</head>
+<body>
+<div class="site">
+  <header class="header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../index.html"><img class="logo" src="../assets/images/vjl-logo.png" alt="Veterans Justice League"></a>
+      <div class="admin-header-title">Media Manager</div>
+      <div class="admin-account" data-admin-account hidden>
+        <span data-admin-user></span>
+        <button class="btn btn-outline admin-signout" type="button" data-sign-out>Sign out</button>
+      </div>
+      <a class="btn btn-outline admin-gallery-link" href="../gallery.html">Public Gallery</a>
+    </div>
+  </header>
+
+  <main class="admin-shell" data-admin-root>
+    <div class="wrap">
+      <section class="admin-auth" data-login-panel>
+        <div class="admin-auth-card">
+          <p class="eyebrow">Private administration</p>
+          <h1>Sign in to Media Manager</h1>
+          <p>Manage Veterans Justice League photos, captions, categories, and publishing.</p>
+          <form class="admin-login-form" data-login-form>
+            <label>Username<input type="text" name="username" data-login-username autocomplete="username" value="admin" required></label>
+            <label>Password<input type="password" name="password" data-login-password autocomplete="current-password" required></label>
+            <button class="primary" type="submit" data-login-submit>Sign in</button>
+          </form>
+          <div class="status-box" data-login-status role="status" aria-live="polite">Enter your admin credentials.</div>
+        </div>
+      </section>
+
+      <section data-admin-workspace hidden>
+        <div class="admin-page-head">
+          <div>
+            <p class="eyebrow">Website administration</p>
+            <h1>Media Manager</h1>
+            <p class="section-intro">Upload photos, choose where they belong, add captions and descriptions, then publish them to the website.</p>
+          </div>
+        </div>
+
+        <section class="admin-panel admin-upload-panel" data-upload-panel>
+          <div class="admin-panel-head">
+            <div><h2>Upload photos</h2><p>Add up to 10 JPEG, PNG, or WebP images at a time.</p></div>
+          </div>
+          <div class="admin-toolbar admin-upload-toolbar">
+            <input type="file" multiple accept="image/jpeg,image/png,image/webp" data-direct-upload-files aria-label="Choose photos">
+            <select data-direct-upload-category aria-label="Website section">
+              <option value="housing">Housing</option>
+              <option value="behind-the-wall">Behind-the-Wall</option>
+              <option value="outreach">Outreach</option>
+              <option value="events">Events</option>
+              <option value="team">Team</option>
+              <option value="partners">Partners</option>
+              <option value="unsorted">Unsorted</option>
+            </select>
+            <button type="button" class="primary" data-direct-upload>Upload selected</button>
+          </div>
+          <div class="status-box" data-direct-upload-status role="status" aria-live="polite">Choose photos and the section where they belong.</div>
+        </section>
+
+        <section class="admin-panel">
+          <div class="admin-panel-head">
+            <div><h2>Review &amp; publish</h2><p>Filter the queue, edit details, and move photos through the publishing process.</p></div>
+          </div>
+
+          <div class="admin-controls">
+            <div class="admin-toolbar">
+              <label class="admin-filter-label">Status
+                <select data-status-filter aria-label="Status filter">
+                  <option value="pending">Needs review</option>
+                  <option value="review">In review</option>
+                  <option value="approved">Approved</option>
+                  <option value="processing">Publishing</option>
+                  <option value="published">Live</option>
+                  <option value="archived">Archived</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </label>
+              <label class="admin-filter-label">Section
+                <select data-category-filter aria-label="Section filter">
+                  <option value="">All sections</option>
+                  <option value="housing">Housing</option>
+                  <option value="behind-the-wall">Behind-the-Wall</option>
+                  <option value="outreach">Outreach</option>
+                  <option value="events">Events</option>
+                  <option value="team">Team</option>
+                  <option value="partners">Partners</option>
+                </select>
+              </label>
+              <button class="secondary" type="button" data-refresh>Refresh</button>
+            </div>
+
+            <div class="admin-bulk">
+              <label><input type="checkbox" data-select-all> Select all loaded</label>
+              <select data-bulk-category aria-label="Bulk section">
+                <option value="">Leave section unchanged</option>
+                <option value="housing">Housing</option>
+                <option value="behind-the-wall">Behind-the-Wall</option>
+                <option value="outreach">Outreach</option>
+                <option value="events">Events</option>
+                <option value="team">Team</option>
+                <option value="partners">Partners</option>
+              </select>
+              <input type="text" placeholder="Gallery / event (optional)" data-bulk-gallery aria-label="Bulk gallery assignment">
+              <span class="spacer"></span>
+              <button class="secondary" data-bulk-action="save">Apply fields</button>
+              <button class="primary" data-bulk-action="approve">Approve</button>
+              <button data-bulk-action="publish">Publish</button>
+              <button class="danger" data-bulk-action="reject">Reject</button>
+              <button class="secondary" data-bulk-action="archive">Archive</button>
+            </div>
+          </div>
+
+          <div class="status-box" data-admin-status role="status" aria-live="polite">Loading…</div>
+          <div class="admin-grid" data-admin-list></div>
+        </section>
+
+        <details class="admin-advanced">
+          <summary>Advanced maintenance</summary>
+          <div class="admin-toolbar admin-advanced-tools">
+            <button class="secondary" type="button" data-sync>Sync incoming folders</button>
+            <button class="secondary" type="button" data-seed-galleries>Refresh gallery groups</button>
+            <button class="secondary" type="button" data-clean-orphans>Clean stale rejected records</button>
+          </div>
+          <div class="status-box" data-maintenance-status role="status" aria-live="polite">These tools are normally not needed during everyday use.</div>
+        </details>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <img class="footer-logo" src="../assets/images/vjl-logo.png" alt="Veterans Justice League">
+        <div class="footer-info"><strong>Veterans Justice League</strong>3617 Betty Dr. STE G<br>Colorado Springs, CO 80917<br><a href="tel:+17193068947">719-306-8947</a></div>
+        <div class="footer-links"><a href="../about.html">About</a><a href="../programs.html">Programs</a><a href="../gallery.html">Gallery</a><a href="../events.html">Events</a><a href="../contact.html">Contact</a></div>
+      </div>
+      <div class="fine">© 2026 Veterans Justice League. Private website administration.</div>
+    </div>
+  </footer>
+</div>
+
+<div class="admin-preview-modal" data-admin-preview hidden role="dialog" aria-modal="true" aria-labelledby="admin-preview-title">
+  <div class="admin-preview-panel">
+    <div class="admin-preview-head"><h2 id="admin-preview-title" data-admin-preview-title>Media preview</h2><button class="admin-preview-close" type="button" data-admin-preview-close aria-label="Close preview">×</button></div>
+    <img class="admin-preview-image" data-admin-preview-image src="" alt="">
+  </div>
+</div>
+
+<script src="../assets/js/site.js?v=20260824-2026"></script>
+<script src="../assets/js/config.js?v=20260824-2026"></script>
+<script src="../assets/js/admin.js?v=20260827-auth1"></script>
+<script src="../assets/js/admin-upload.js?v=20260827-auth1"></script>
+</body>
+</html>
