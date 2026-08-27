@@ -1,5 +1,5 @@
 name = "veterans-justice-league"
-main = "worker/src/index.js"
+main = "worker/src/main.js"
 compatibility_date = "2026-08-24"
 workers_dev = true
 preview_urls = false
