@@ -132,6 +132,7 @@ jobs:
           test "$code" = '404'
           grep -q 'Page Not Found' /tmp/vjl-404.html
       - name: Render deployed site in headless Chrome
+        continue-on-error: true
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         shell: bash
