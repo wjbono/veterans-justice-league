@@ -1,0 +1,41 @@
+name: One-time auth PBKDF2 compatibility patch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-auth-pbkdf2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch PBKDF2 iteration limit
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('worker/src/main.js')
+          text = path.read_text()
+          old = 'const PASSWORD_ITERATIONS=120000;'
+          new = 'const PASSWORD_ITERATIONS=100000;'
+          if old in text:
+              text = text.replace(old, new, 1)
+              path.write_text(text)
+          elif new not in text:
+              raise SystemExit('Expected PASSWORD_ITERATIONS constant was not found.')
+          PY
+          rm .github/workflows/patch-auth-pbkdf2.yml
+      - name: Commit compatibility fix
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add worker/src/main.js .github/workflows/patch-auth-pbkdf2.yml
+          git commit -m 'Fix Cloudflare PBKDF2 production limit'
+          git push
