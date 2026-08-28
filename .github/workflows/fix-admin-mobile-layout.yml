@@ -1,0 +1,47 @@
+name: One-time admin mobile layout fix
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix admin checkbox and mobile actions layout
+        shell: python
+        run: |
+          from pathlib import Path
+
+          css_path = Path('assets/css/admin.css')
+          css = css_path.read_text()
+          old = '.featured-label{display:flex!important;grid-template-columns:auto 1fr!important;align-items:center;gap:8px!important}'
+          new = '.featured-label{display:flex!important;align-items:center;gap:10px!important;width:max-content;max-width:100%}.featured-label input[type="checkbox"]{width:20px!important;height:20px;min-width:20px;flex:0 0 20px;padding:0!important;margin:0;accent-color:var(--green)}'
+          if old not in css:
+              raise SystemExit('Expected featured-label CSS not found')
+          css = css.replace(old, new, 1)
+          old_mobile = '.admin-user-actions{display:grid}.admin-reset-group{display:grid;min-width:0}.admin-user-actions button,.admin-reset-group input{width:100%}'
+          new_mobile = '.admin-actions{display:grid;grid-template-columns:1fr 1fr}.admin-actions button{width:100%}.admin-user-actions{display:grid}.admin-reset-group{display:grid;min-width:0}.admin-user-actions button,.admin-reset-group input{width:100%}'
+          if old_mobile not in css:
+              raise SystemExit('Expected mobile action CSS not found')
+          css = css.replace(old_mobile, new_mobile, 1)
+          css_path.write_text(css)
+
+          for html_name in ('admin/index.html','admin/users.html'):
+              p = Path(html_name)
+              text = p.read_text()
+              text = text.replace('admin.css?v=20260827-auth2','admin.css?v=20260828-layout1')
+              text = text.replace('admin.css?v=20260827-auth1','admin.css?v=20260828-layout1')
+              text = text.replace('admin.css?v=20260827-auth3','admin.css?v=20260828-layout1')
+              p.write_text(text)
+
+      - name: Commit layout fix and remove temporary workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/fix-admin-mobile-layout.yml
+          git add assets/css/admin.css admin/index.html admin/users.html
+          git commit -m 'Fix admin featured checkbox and mobile action layout'
+          git push
