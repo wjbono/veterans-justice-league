@@ -42,6 +42,13 @@
   const categoryFilter=document.querySelector('[data-category-filter]');
   const selectAll=document.querySelector('[data-select-all]');
   const bulkPanel=document.querySelector('[data-bulk-panel]');
+  const bulkModeToggle=document.querySelector('[data-bulk-mode-toggle]');
+  const bulkModeDone=document.querySelector('[data-bulk-mode-done]');
+  const bulkEditDetails=document.querySelector('[data-bulk-edit-details]');
+  const bulkEditor=document.querySelector('[data-bulk-editor]');
+  const bulkEditorClose=document.querySelector('[data-bulk-editor-close]');
+  const bulkEditorCancel=document.querySelector('[data-bulk-editor-cancel]');
+  const bulkInstruction=document.querySelector('[data-bulk-instruction]');
   const bulkCategory=document.querySelector('[data-bulk-category]');
   const bulkGalleryMode=document.querySelector('[data-bulk-gallery-mode]');
   const bulkGalleryValue=document.querySelector('[data-bulk-gallery-value]');
@@ -57,6 +64,7 @@
   const maintenanceStatus=document.querySelector('[data-maintenance-status]');
   const objectUrls=new Set();
   let currentSession=null;
+  let bulkMode=false;
 
   const STATUS_LABELS={pending:'Needs review',review:'In review',approved:'Approved',processing:'Publishing',published:'Live',archived:'Archived',rejected:'Rejected'};
   const CATEGORY_LABELS={housing:'Housing','behind-the-wall':'Behind-the-Wall',outreach:'Outreach',events:'Events',team:'Team',partners:'Partners'};
@@ -214,8 +222,9 @@
 
   function closePreview(){if(previewModal){previewModal.hidden=true;previewImage.removeAttribute('src');}}
 
-  async function load(){
+  async function load({preserveSelection=false}={}){
     if(!currentSession||currentSession.user?.must_change_password)return;
+    const keep=preserveSelection?new Set(selectedIds()):new Set();
     clearObjectUrls();
     if(selectAll)selectAll.checked=false;
     msg('Loading…');
@@ -230,6 +239,7 @@
       list.innerHTML='';
       (data.items||[]).forEach(item=>list.append(card(item)));
       if(!(data.items||[]).length)list.innerHTML='<div class="admin-empty-state">No items in this view.</div>';
+      if(keep.size)list.querySelectorAll('[data-select-item]').forEach(box=>{const id=box.closest('.admin-card')?.dataset.id;box.checked=keep.has(id);});
       msg(`${(data.items||[]).length} item(s) in ${STATUS_LABELS[currentStatus]||currentStatus}`);
       renderBulkWorkflow();
       updateBulkUi();
@@ -275,6 +285,39 @@
     DERIVATIVES_MISSING:'One or more archived photos cannot be republished because its web images are missing.'
   };
 
+  function closeBulkEditor(){
+    if(bulkEditor)bulkEditor.hidden=true;
+  }
+
+  function setBulkMode(enabled){
+    bulkMode=!!enabled;
+    workspace?.classList.toggle('is-bulk-mode',bulkMode);
+    if(bulkPanel)bulkPanel.hidden=!bulkMode;
+    if(bulkModeToggle){bulkModeToggle.classList.toggle('primary',bulkMode);bulkModeToggle.textContent=bulkMode?'Exit bulk edit':'Bulk edit';}
+    if(!bulkMode){
+      list?.querySelectorAll('[data-select-item]').forEach(box=>box.checked=false);
+      closeBulkEditor();
+      resetBulkFields();
+    }
+    updateBulkUi();
+  }
+
+  function applyBulkChangesToCards(body,ids){
+    for(const id of ids){
+      const el=[...list.querySelectorAll('.admin-card')].find(card=>card.dataset.id===id);
+      if(!el)continue;
+      if(Object.prototype.hasOwnProperty.call(body,'category')){
+        const field=el.querySelector('[data-field="category"]');if(field)field.value=body.category||'';
+      }
+      if(Object.prototype.hasOwnProperty.call(body,'gallery')){
+        const field=el.querySelector('[data-field="gallery"]');if(field)field.value=body.gallery||'';
+      }
+      if(Object.prototype.hasOwnProperty.call(body,'featured')){
+        const field=el.querySelector('[data-field="featured"]');if(field)field.checked=!!body.featured;
+      }
+    }
+  }
+
   function renderBulkWorkflow(){
     if(!bulkWorkflowActions)return;
     const actions=BULK_WORKFLOW[statusFilter?.value||'pending']||[];
@@ -286,11 +329,14 @@
     const selected=boxes.filter(box=>box.checked);
     boxes.forEach(box=>box.closest('.admin-card')?.classList.toggle('is-selected',box.checked));
     if(selectionCount)selectionCount.textContent=`${selected.length} selected`;
+    if(bulkInstruction)bulkInstruction.textContent=selected.length?'Choose an action below, or edit details for the selected photos.':'Select the photos you want to work with.';
     if(selectAll){
       selectAll.checked=boxes.length>0&&selected.length===boxes.length;
       selectAll.indeterminate=selected.length>0&&selected.length<boxes.length;
+      selectAll.disabled=!boxes.length;
     }
     if(clearSelection)clearSelection.disabled=selected.length===0;
+    if(bulkEditDetails)bulkEditDetails.disabled=selected.length===0;
     bulkPanel?.classList.toggle('has-selection',selected.length>0);
     bulkPanel?.querySelectorAll('[data-bulk-action]').forEach(button=>button.disabled=selected.length===0);
   }
@@ -328,7 +374,7 @@
     const body=bulkPayload(ids,action);
     if(action==='save'&&!hasBulkFieldChange(body)){msg('Choose at least one bulk field to change first.');return;}
     const label=BULK_ACTION_LABELS[action]||action;
-    if(['publish','reject','archive','restore'].includes(action)&&!confirm(`${label} ${ids.length} selected photo${ids.length===1?'':'s'}?`))return;
+    if(['approve','publish','reject','archive','restore'].includes(action)&&!confirm(`${label} ${ids.length} selected photo${ids.length===1?'':'s'}?`))return;
     msg(`${label}: updating ${ids.length} selected photo${ids.length===1?'':'s'}…`);
     const response=await request('/api/admin/media/bulk',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data=await response.json().catch(()=>({}));
@@ -339,8 +385,16 @@
       const reasons=[...new Set(failures.map(item=>BULK_ERRORS[item.error]||item.error||'Unknown error'))].slice(0,2);
       resultMessage=`${ids.length-failures.length} succeeded; ${failures.length} failed. ${reasons.join(' ')}`;
     }else resultMessage=`${label} completed for ${ids.length} photo${ids.length===1?'':'s'}.`;
-    resetBulkFields();
-    await load();
+    if(action==='save'){
+      applyBulkChangesToCards(body,ids);
+      resetBulkFields();
+      closeBulkEditor();
+      updateBulkUi();
+    }else{
+      resetBulkFields();
+      closeBulkEditor();
+      await load();
+    }
     msg(resultMessage);
   }
 
@@ -389,9 +443,14 @@
   });
 
   signOut?.addEventListener('click',async()=>{await auth.logout();showLogin('Signed out.');});
-  document.querySelector('[data-refresh]')?.addEventListener('click',load);
-  statusFilter?.addEventListener('change',load);
-  categoryFilter?.addEventListener('change',load);
+  document.querySelector('[data-refresh]')?.addEventListener('click',()=>load({preserveSelection:bulkMode}));
+  statusFilter?.addEventListener('change',()=>{setBulkMode(false);load();});
+  categoryFilter?.addEventListener('change',()=>{setBulkMode(false);load();});
+  bulkModeToggle?.addEventListener('click',()=>setBulkMode(!bulkMode));
+  bulkModeDone?.addEventListener('click',()=>setBulkMode(false));
+  bulkEditDetails?.addEventListener('click',()=>{if(selectedIds().length&&bulkEditor)bulkEditor.hidden=false;});
+  bulkEditorClose?.addEventListener('click',closeBulkEditor);
+  bulkEditorCancel?.addEventListener('click',()=>{resetBulkFields();closeBulkEditor();});
 
   document.querySelector('[data-sync]')?.addEventListener('click',async()=>{
     try{maintenanceMsg('Syncing incoming folders…');const response=await request('/api/admin/sync',{method:'POST'});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||('HTTP '+response.status));maintenanceMsg(`Sync complete: ${data.scanned||0} scanned, ${data.added||0} new, ${data.rejected||0} rejected.`);await load();}catch(error){maintenanceMsg('Sync failed: '+error.message);}
