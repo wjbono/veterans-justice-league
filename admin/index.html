@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="light">
   <title>Media Manager | Veterans Justice League</title>
   <link rel="stylesheet" href="../assets/css/styles.css">
-  <link rel="stylesheet" href="../assets/css/admin.css?v=20260827-multiuser1">
+  <link rel="stylesheet" href="../assets/css/admin.css?v=20260828-bulk2">
 </head>
 <body>
 <div class="site">
@@ -128,24 +128,55 @@
               <button class="secondary" type="button" data-refresh>Refresh</button>
             </div>
 
-            <div class="admin-bulk">
-              <label><input type="checkbox" data-select-all> Select all loaded</label>
-              <select data-bulk-category aria-label="Bulk section">
-                <option value="">Leave section unchanged</option>
-                <option value="housing">Housing</option>
-                <option value="behind-the-wall">Behind-the-Wall</option>
-                <option value="outreach">Outreach</option>
-                <option value="events">Events</option>
-                <option value="team">Team</option>
-                <option value="partners">Partners</option>
-              </select>
-              <input type="text" placeholder="Gallery / event (optional)" data-bulk-gallery aria-label="Bulk gallery assignment">
-              <span class="spacer"></span>
-              <button class="secondary" data-bulk-action="save">Apply fields</button>
-              <button class="primary" data-bulk-action="approve">Approve</button>
-              <button data-bulk-action="publish">Publish</button>
-              <button class="danger" data-bulk-action="reject">Reject</button>
-              <button class="secondary" data-bulk-action="archive">Archive</button>
+            <div class="admin-bulk" data-bulk-panel>
+              <div class="admin-bulk-head">
+                <div class="admin-bulk-title"><strong>Bulk edit selected</strong><span data-selection-count>0 selected</span></div>
+                <div class="admin-bulk-selection-tools">
+                  <label><input type="checkbox" data-select-all> Select all visible</label>
+                  <button class="secondary" type="button" data-clear-selection>Clear selection</button>
+                </div>
+              </div>
+
+              <div class="admin-bulk-fields">
+                <label>Website section
+                  <select data-bulk-category aria-label="Set website section for selected photos">
+                    <option value="">No change</option>
+                    <option value="housing">Housing</option>
+                    <option value="behind-the-wall">Behind-the-Wall</option>
+                    <option value="outreach">Outreach</option>
+                    <option value="events">Events</option>
+                    <option value="team">Team</option>
+                    <option value="partners">Partners</option>
+                    <option value="__clear__">Unsorted / clear section</option>
+                  </select>
+                </label>
+                <label>Gallery / event
+                  <select data-bulk-gallery-mode aria-label="Gallery or event bulk edit mode">
+                    <option value="keep">No change</option>
+                    <option value="set">Set same gallery / event</option>
+                    <option value="clear">Clear gallery / event</option>
+                  </select>
+                </label>
+                <label data-bulk-gallery-value hidden>Gallery / event name
+                  <input type="text" placeholder="Enter gallery or event name" data-bulk-gallery aria-label="Gallery or event name for selected photos">
+                </label>
+                <label>Featured image
+                  <select data-bulk-featured aria-label="Featured status for selected photos">
+                    <option value="">No change</option>
+                    <option value="true">Mark as featured</option>
+                    <option value="false">Mark as not featured</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="admin-bulk-footer">
+                <button class="secondary" type="button" data-bulk-action="save">Apply field changes</button>
+                <div class="admin-bulk-workflow">
+                  <span>Workflow action</span>
+                  <div class="admin-bulk-workflow-buttons" data-bulk-workflow-actions></div>
+                </div>
+              </div>
+              <p class="admin-bulk-help" data-bulk-help>Select one or more photos using their checkboxes. Choose only the fields you want to change, then apply them to all selected photos.</p>
             </div>
           </div>
           <div class="status-box" data-admin-status role="status" aria-live="polite">Loading…</div>
@@ -187,7 +218,7 @@
 <script src="../assets/js/site.js?v=20260824-2026"></script>
 <script src="../assets/js/config.js?v=20260824-2026"></script>
 <script src="../assets/js/admin-auth.js?v=20260827-multiuser1"></script>
-<script src="../assets/js/admin.js?v=20260827-multiuser1"></script>
+<script src="../assets/js/admin.js?v=20260828-bulk2"></script>
 <script src="../assets/js/admin-upload.js?v=20260827-multiuser1"></script>
 </body>
 </html>

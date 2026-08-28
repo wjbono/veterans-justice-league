@@ -41,8 +41,15 @@
   const statusFilter=document.querySelector('[data-status-filter]');
   const categoryFilter=document.querySelector('[data-category-filter]');
   const selectAll=document.querySelector('[data-select-all]');
+  const bulkPanel=document.querySelector('[data-bulk-panel]');
   const bulkCategory=document.querySelector('[data-bulk-category]');
+  const bulkGalleryMode=document.querySelector('[data-bulk-gallery-mode]');
+  const bulkGalleryValue=document.querySelector('[data-bulk-gallery-value]');
   const bulkGallery=document.querySelector('[data-bulk-gallery]');
+  const bulkFeatured=document.querySelector('[data-bulk-featured]');
+  const selectionCount=document.querySelector('[data-selection-count]');
+  const clearSelection=document.querySelector('[data-clear-selection]');
+  const bulkWorkflowActions=document.querySelector('[data-bulk-workflow-actions]');
   const previewModal=document.querySelector('[data-admin-preview]');
   const previewImage=document.querySelector('[data-admin-preview-image]');
   const previewTitle=document.querySelector('[data-admin-preview-title]');
@@ -224,6 +231,8 @@
       (data.items||[]).forEach(item=>list.append(card(item)));
       if(!(data.items||[]).length)list.innerHTML='<div class="admin-empty-state">No items in this view.</div>';
       msg(`${(data.items||[]).length} item(s) in ${STATUS_LABELS[currentStatus]||currentStatus}`);
+      renderBulkWorkflow();
+      updateBulkUi();
       hydratePreviews();
     }catch(error){msg('Unable to load media: '+error.message);}
   }
@@ -245,21 +254,94 @@
     if(!response.ok)throw new Error(data.error||('HTTP '+response.status));
   }
 
-  function selectedIds(){return [...list.querySelectorAll('[data-select-item]:checked')].map(box=>box.closest('.admin-card')?.dataset.id).filter(Boolean);}
+  function selectedBoxes(){return [...list.querySelectorAll('[data-select-item]:checked')];}
+  function selectedIds(){return selectedBoxes().map(box=>box.closest('.admin-card')?.dataset.id).filter(Boolean);}
+
+  const BULK_WORKFLOW={
+    pending:[['review','Start review','secondary'],['approve','Approve','primary'],['reject','Reject','danger']],
+    review:[['approve','Approve','primary'],['reject','Reject','danger']],
+    approved:[['publish','Publish','publish']],
+    processing:[],
+    published:[['archive','Archive','secondary']],
+    archived:[['restore','Republish','primary']],
+    rejected:[['restore','Restore to pending','secondary']]
+  };
+  const BULK_ACTION_LABELS={save:'Apply field changes',review:'Start review',approve:'Approve',publish:'Publish',reject:'Reject',archive:'Archive',restore:'Restore'};
+  const BULK_ERRORS={
+    INVALID_TRANSITION:'One or more selected photos are not in a status that allows that action.',
+    CATEGORY_REQUIRED:'Assign a website section before approving or publishing.',
+    INVALID_UPLOAD:'One or more selected files failed validation.',
+    SOURCE_MISSING:'The original file is missing for one or more selected photos.',
+    DERIVATIVES_MISSING:'One or more archived photos cannot be republished because its web images are missing.'
+  };
+
+  function renderBulkWorkflow(){
+    if(!bulkWorkflowActions)return;
+    const actions=BULK_WORKFLOW[statusFilter?.value||'pending']||[];
+    bulkWorkflowActions.innerHTML=actions.length?actions.map(([action,label,kind])=>`<button type="button" class="${kind==='primary'?'primary':kind==='danger'?'danger':kind==='publish'?'bulk-publish':'secondary'}" data-bulk-action="${action}">${label}</button>`).join(''):'<span class="admin-bulk-none">No workflow action is available for this status.</span>';
+  }
+
+  function updateBulkUi(){
+    const boxes=[...list.querySelectorAll('[data-select-item]')];
+    const selected=boxes.filter(box=>box.checked);
+    boxes.forEach(box=>box.closest('.admin-card')?.classList.toggle('is-selected',box.checked));
+    if(selectionCount)selectionCount.textContent=`${selected.length} selected`;
+    if(selectAll){
+      selectAll.checked=boxes.length>0&&selected.length===boxes.length;
+      selectAll.indeterminate=selected.length>0&&selected.length<boxes.length;
+    }
+    if(clearSelection)clearSelection.disabled=selected.length===0;
+    bulkPanel?.classList.toggle('has-selection',selected.length>0);
+    bulkPanel?.querySelectorAll('[data-bulk-action]').forEach(button=>button.disabled=selected.length===0);
+  }
+
+  function resetBulkFields(){
+    if(bulkCategory)bulkCategory.value='';
+    if(bulkGalleryMode)bulkGalleryMode.value='keep';
+    if(bulkGallery)bulkGallery.value='';
+    if(bulkGalleryValue)bulkGalleryValue.hidden=true;
+    if(bulkFeatured)bulkFeatured.value='';
+  }
+
+  function bulkPayload(ids,action){
+    const body={ids,action};
+    const category=bulkCategory?.value||'';
+    if(category==='__clear__')body.category=null;
+    else if(category)body.category=category;
+    const galleryMode=bulkGalleryMode?.value||'keep';
+    if(galleryMode==='clear')body.gallery=null;
+    if(galleryMode==='set'){
+      const value=bulkGallery?.value.trim()||'';
+      if(!value)throw new Error('Enter a gallery / event name, or choose “No change.”');
+      body.gallery=value;
+    }
+    if(bulkFeatured?.value==='true')body.featured=true;
+    if(bulkFeatured?.value==='false')body.featured=false;
+    return body;
+  }
+
+  function hasBulkFieldChange(body){return ['category','gallery','featured'].some(key=>Object.prototype.hasOwnProperty.call(body,key));}
 
   async function bulkAction(action){
     const ids=selectedIds();
-    if(!ids.length){msg('Select at least one media item first.');return;}
-    const body={ids,action};
-    if(bulkCategory?.value)body.category=bulkCategory.value;
-    if(bulkGallery?.value.trim())body.gallery=bulkGallery.value.trim();
-    msg(`${action} on ${ids.length} item(s)…`);
+    if(!ids.length){msg('Select at least one photo first.');return;}
+    const body=bulkPayload(ids,action);
+    if(action==='save'&&!hasBulkFieldChange(body)){msg('Choose at least one bulk field to change first.');return;}
+    const label=BULK_ACTION_LABELS[action]||action;
+    if(['publish','reject','archive','restore'].includes(action)&&!confirm(`${label} ${ids.length} selected photo${ids.length===1?'':'s'}?`))return;
+    msg(`${label}: updating ${ids.length} selected photo${ids.length===1?'':'s'}…`);
     const response=await request('/api/admin/media/bulk',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||('HTTP '+response.status));
     const failures=(data.results||[]).filter(item=>!item.ok);
-    msg(failures.length?`${ids.length-failures.length} succeeded; ${failures.length} failed.`:`${ids.length} item(s) updated.`);
+    let resultMessage;
+    if(failures.length){
+      const reasons=[...new Set(failures.map(item=>BULK_ERRORS[item.error]||item.error||'Unknown error'))].slice(0,2);
+      resultMessage=`${ids.length-failures.length} succeeded; ${failures.length} failed. ${reasons.join(' ')}`;
+    }else resultMessage=`${label} completed for ${ids.length} photo${ids.length===1?'':'s'}.`;
+    resetBulkFields();
     await load();
+    msg(resultMessage);
   }
 
   loginForm?.addEventListener('submit',async event=>{
@@ -318,17 +400,21 @@
     try{maintenanceMsg('Refreshing gallery groups…');const response=await request('/api/admin/galleries/seed',{method:'POST'});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||('HTTP '+response.status));maintenanceMsg(`${data.seeded||0} gallery groups refreshed.`);}catch(error){maintenanceMsg('Gallery refresh failed: '+error.message);}
   });
 
-  selectAll?.addEventListener('change',()=>list.querySelectorAll('[data-select-item]').forEach(box=>box.checked=selectAll.checked));
-  list?.addEventListener('change',event=>{if(event.target.matches('[data-select-item]')){const boxes=[...list.querySelectorAll('[data-select-item]')];if(selectAll)selectAll.checked=boxes.length>0&&boxes.every(box=>box.checked);}});
+  selectAll?.addEventListener('change',()=>{list.querySelectorAll('[data-select-item]').forEach(box=>box.checked=selectAll.checked);updateBulkUi();});
+  clearSelection?.addEventListener('click',()=>{list.querySelectorAll('[data-select-item]').forEach(box=>box.checked=false);updateBulkUi();});
+  bulkGalleryMode?.addEventListener('change',()=>{if(bulkGalleryValue)bulkGalleryValue.hidden=bulkGalleryMode.value!=='set';if(bulkGalleryMode.value==='set')bulkGallery?.focus();});
+  list?.addEventListener('change',event=>{if(event.target.matches('[data-select-item]'))updateBulkUi();});
   list?.addEventListener('click',async event=>{
     const previewButton=event.target.closest('[data-preview-url]');if(previewButton){await openPreview(previewButton);return;}
     const button=event.target.closest('button[data-action]');if(!button)return;
     const el=button.closest('.admin-card');
     try{button.disabled=true;msg(`${button.textContent.trim()}…`);await updateCard(el,button.dataset.action);await load();}catch(error){msg('Update failed: '+error.message);}finally{button.disabled=false;}
   });
-  document.querySelectorAll('[data-bulk-action]').forEach(button=>button.addEventListener('click',async()=>{
-    try{button.disabled=true;await bulkAction(button.dataset.bulkAction);}catch(error){msg('Bulk update failed: '+error.message);}finally{button.disabled=false;}
-  }));
+  bulkPanel?.addEventListener('click',async event=>{
+    const button=event.target.closest('[data-bulk-action]');
+    if(!button)return;
+    try{button.disabled=true;await bulkAction(button.dataset.bulkAction);}catch(error){msg('Bulk update failed: '+error.message);}finally{button.disabled=false;updateBulkUi();}
+  });
 
   previewClose?.addEventListener('click',closePreview);
   previewModal?.addEventListener('click',event=>{if(event.target===previewModal)closePreview();});
