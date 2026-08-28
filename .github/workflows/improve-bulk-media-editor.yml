@@ -6,118 +6,11 @@ permissions:
   contents: write
 jobs:
   improve:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Improve bulk media editor
-        shell: python
-        run: |
-          from pathlib import Path
-          import re
-
-          index = Path('admin/index.html')
-          html = index.read_text()
-          pattern = re.compile(r'''            <div class="admin-bulk">.*?            </div>\n          </div>\n          <div class="status-box" data-admin-status''', re.S)
-          replacement = '''            <div class="admin-bulk" data-bulk-panel>
-              <div class="admin-bulk-head">
-                <div class="admin-bulk-title"><strong>Bulk edit selected</strong><span data-selection-count>0 selected</span></div>
-                <div class="admin-bulk-selection-tools">
-                  <label><input type="checkbox" data-select-all> Select all visible</label>
-                  <button class="secondary" type="button" data-clear-selection>Clear selection</button>
-                </div>
-              </div>
-
-              <div class="admin-bulk-fields">
-                <label>Website section
-                  <select data-bulk-category aria-label="Set website section for selected photos">
-                    <option value="">No change</option>
-                    <option value="housing">Housing</option>
-                    <option value="behind-the-wall">Behind-the-Wall</option>
-                    <option value="outreach">Outreach</option>
-                    <option value="events">Events</option>
-                    <option value="team">Team</option>
-                    <option value="partners">Partners</option>
-                    <option value="__clear__">Unsorted / clear section</option>
-                  </select>
-                </label>
-                <label>Gallery / event
-                  <select data-bulk-gallery-mode aria-label="Gallery or event bulk edit mode">
-                    <option value="keep">No change</option>
-                    <option value="set">Set same gallery / event</option>
-                    <option value="clear">Clear gallery / event</option>
-                  </select>
-                </label>
-                <label data-bulk-gallery-value hidden>Gallery / event name
-                  <input type="text" placeholder="Enter gallery or event name" data-bulk-gallery aria-label="Gallery or event name for selected photos">
-                </label>
-                <label>Featured image
-                  <select data-bulk-featured aria-label="Featured status for selected photos">
-                    <option value="">No change</option>
-                    <option value="true">Mark as featured</option>
-                    <option value="false">Mark as not featured</option>
-                  </select>
-                </label>
-              </div>
-
-              <div class="admin-bulk-footer">
-                <button class="secondary" type="button" data-bulk-action="save">Apply field changes</button>
-                <div class="admin-bulk-workflow">
-                  <span>Workflow action</span>
-                  <div class="admin-bulk-workflow-buttons" data-bulk-workflow-actions></div>
-                </div>
-              </div>
-              <p class="admin-bulk-help" data-bulk-help>Select one or more photos using their checkboxes. Choose only the fields you want to change, then apply them to all selected photos.</p>
-            </div>
-          </div>
-          <div class="status-box" data-admin-status'''
-          html, count = pattern.subn(replacement, html, count=1)
-          if count != 1:
-              raise SystemExit(f'bulk HTML replacement count={count}')
-          html = html.replace('admin.css?v=20260827-multiuser1', 'admin.css?v=20260828-bulk2')
-          html = html.replace('admin.js?v=20260827-multiuser1', 'admin.js?v=20260828-bulk2')
-          index.write_text(html)
-
-          js_path = Path('assets/js/admin.js')
-          js = js_path.read_text()
-          old = """  const bulkCategory=document.querySelector('[data-bulk-category]');\n  const bulkGallery=document.querySelector('[data-bulk-gallery]');\n"""
-          new = """  const bulkPanel=document.querySelector('[data-bulk-panel]');\n  const bulkCategory=document.querySelector('[data-bulk-category]');\n  const bulkGalleryMode=document.querySelector('[data-bulk-gallery-mode]');\n  const bulkGalleryValue=document.querySelector('[data-bulk-gallery-value]');\n  const bulkGallery=document.querySelector('[data-bulk-gallery]');\n  const bulkFeatured=document.querySelector('[data-bulk-featured]');\n  const selectionCount=document.querySelector('[data-selection-count]');\n  const clearSelection=document.querySelector('[data-clear-selection]');\n  const bulkWorkflowActions=document.querySelector('[data-bulk-workflow-actions]');\n"""
-          if old not in js: raise SystemExit('bulk const anchor not found')
-          js = js.replace(old, new, 1)
-
-          old = """  function selectedIds(){return [...list.querySelectorAll('[data-select-item]:checked')].map(box=>box.closest('.admin-card')?.dataset.id).filter(Boolean);}\n\n  async function bulkAction(action){\n    const ids=selectedIds();\n    if(!ids.length){msg('Select at least one media item first.');return;}\n    const body={ids,action};\n    if(bulkCategory?.value)body.category=bulkCategory.value;\n    if(bulkGallery?.value.trim())body.gallery=bulkGallery.value.trim();\n    msg(`${action} on ${ids.length} item(s)…`);\n    const response=await request('/api/admin/media/bulk',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});\n    const data=await response.json().catch(()=>({}));\n    if(!response.ok)throw new Error(data.error||('HTTP '+response.status));\n    const failures=(data.results||[]).filter(item=>!item.ok);\n    msg(failures.length?`${ids.length-failures.length} succeeded; ${failures.length} failed.`:`${ids.length} item(s) updated.`);\n    await load();\n  }\n"""
-          new = """  function selectedBoxes(){return [...list.querySelectorAll('[data-select-item]:checked')];}\n  function selectedIds(){return selectedBoxes().map(box=>box.closest('.admin-card')?.dataset.id).filter(Boolean);}\n\n  const BULK_WORKFLOW={\n    pending:[['review','Start review','secondary'],['approve','Approve','primary'],['reject','Reject','danger']],\n    review:[['approve','Approve','primary'],['reject','Reject','danger']],\n    approved:[['publish','Publish','publish']],\n    processing:[],\n    published:[['archive','Archive','secondary']],\n    archived:[['restore','Republish','primary']],\n    rejected:[['restore','Restore to pending','secondary']]\n  };\n  const BULK_ACTION_LABELS={save:'Apply field changes',review:'Start review',approve:'Approve',publish:'Publish',reject:'Reject',archive:'Archive',restore:'Restore'};\n  const BULK_ERRORS={\n    INVALID_TRANSITION:'One or more selected photos are not in a status that allows that action.',\n    CATEGORY_REQUIRED:'Assign a website section before approving or publishing.',\n    INVALID_UPLOAD:'One or more selected files failed validation.',\n    SOURCE_MISSING:'The original file is missing for one or more selected photos.',\n    DERIVATIVES_MISSING:'One or more archived photos cannot be republished because its web images are missing.'\n  };\n\n  function renderBulkWorkflow(){\n    if(!bulkWorkflowActions)return;\n    const actions=BULK_WORKFLOW[statusFilter?.value||'pending']||[];\n    bulkWorkflowActions.innerHTML=actions.length?actions.map(([action,label,kind])=>`<button type=\"button\" class=\"${kind==='primary'?'primary':kind==='danger'?'danger':kind==='publish'?'bulk-publish':'secondary'}\" data-bulk-action=\"${action}\">${label}</button>`).join(''):'<span class=\"admin-bulk-none\">No workflow action is available for this status.</span>';\n  }\n\n  function updateBulkUi(){\n    const boxes=[...list.querySelectorAll('[data-select-item]')];\n    const selected=boxes.filter(box=>box.checked);\n    boxes.forEach(box=>box.closest('.admin-card')?.classList.toggle('is-selected',box.checked));\n    if(selectionCount)selectionCount.textContent=`${selected.length} selected`;\n    if(selectAll){\n      selectAll.checked=boxes.length>0&&selected.length===boxes.length;\n      selectAll.indeterminate=selected.length>0&&selected.length<boxes.length;\n    }\n    if(clearSelection)clearSelection.disabled=selected.length===0;\n    bulkPanel?.classList.toggle('has-selection',selected.length>0);\n    bulkPanel?.querySelectorAll('[data-bulk-action]').forEach(button=>button.disabled=selected.length===0);\n  }\n\n  function resetBulkFields(){\n    if(bulkCategory)bulkCategory.value='';\n    if(bulkGalleryMode)bulkGalleryMode.value='keep';\n    if(bulkGallery)bulkGallery.value='';\n    if(bulkGalleryValue)bulkGalleryValue.hidden=true;\n    if(bulkFeatured)bulkFeatured.value='';\n  }\n\n  function bulkPayload(ids,action){\n    const body={ids,action};\n    const category=bulkCategory?.value||'';\n    if(category==='__clear__')body.category=null;\n    else if(category)body.category=category;\n    const galleryMode=bulkGalleryMode?.value||'keep';\n    if(galleryMode==='clear')body.gallery=null;\n    if(galleryMode==='set'){\n      const value=bulkGallery?.value.trim()||'';\n      if(!value)throw new Error('Enter a gallery / event name, or choose “No change.”');\n      body.gallery=value;\n    }\n    if(bulkFeatured?.value==='true')body.featured=true;\n    if(bulkFeatured?.value==='false')body.featured=false;\n    return body;\n  }\n\n  function hasBulkFieldChange(body){return ['category','gallery','featured'].some(key=>Object.prototype.hasOwnProperty.call(body,key));}\n\n  async function bulkAction(action){\n    const ids=selectedIds();\n    if(!ids.length){msg('Select at least one photo first.');return;}\n    const body=bulkPayload(ids,action);\n    if(action==='save'&&!hasBulkFieldChange(body)){msg('Choose at least one bulk field to change first.');return;}\n    const label=BULK_ACTION_LABELS[action]||action;\n    if(['publish','reject','archive','restore'].includes(action)&&!confirm(`${label} ${ids.length} selected photo${ids.length===1?'':'s'}?`))return;\n    msg(`${label}: updating ${ids.length} selected photo${ids.length===1?'':'s'}…`);\n    const response=await request('/api/admin/media/bulk',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});\n    const data=await response.json().catch(()=>({}));\n    if(!response.ok)throw new Error(data.error||('HTTP '+response.status));\n    const failures=(data.results||[]).filter(item=>!item.ok);\n    let resultMessage;\n    if(failures.length){\n      const reasons=[...new Set(failures.map(item=>BULK_ERRORS[item.error]||item.error||'Unknown error'))].slice(0,2);\n      resultMessage=`${ids.length-failures.length} succeeded; ${failures.length} failed. ${reasons.join(' ')}`;\n    }else resultMessage=`${label} completed for ${ids.length} photo${ids.length===1?'':'s'}.`;\n    resetBulkFields();\n    await load();\n    msg(resultMessage);\n  }\n"""
-          if old not in js: raise SystemExit('bulk function anchor not found')
-          js = js.replace(old, new, 1)
-
-          old = """      msg(`${(data.items||[]).length} item(s) in ${STATUS_LABELS[currentStatus]||currentStatus}`);\n      hydratePreviews();\n"""
-          new = """      msg(`${(data.items||[]).length} item(s) in ${STATUS_LABELS[currentStatus]||currentStatus}`);\n      renderBulkWorkflow();\n      updateBulkUi();\n      hydratePreviews();\n"""
-          if old not in js: raise SystemExit('load anchor not found')
-          js = js.replace(old, new, 1)
-
-          old = """  selectAll?.addEventListener('change',()=>list.querySelectorAll('[data-select-item]').forEach(box=>box.checked=selectAll.checked));\n  list?.addEventListener('change',event=>{if(event.target.matches('[data-select-item]')){const boxes=[...list.querySelectorAll('[data-select-item]')];if(selectAll)selectAll.checked=boxes.length>0&&boxes.every(box=>box.checked);}});\n"""
-          new = """  selectAll?.addEventListener('change',()=>{list.querySelectorAll('[data-select-item]').forEach(box=>box.checked=selectAll.checked);updateBulkUi();});\n  clearSelection?.addEventListener('click',()=>{list.querySelectorAll('[data-select-item]').forEach(box=>box.checked=false);updateBulkUi();});\n  bulkGalleryMode?.addEventListener('change',()=>{if(bulkGalleryValue)bulkGalleryValue.hidden=bulkGalleryMode.value!=='set';if(bulkGalleryMode.value==='set')bulkGallery?.focus();});\n  list?.addEventListener('change',event=>{if(event.target.matches('[data-select-item]'))updateBulkUi();});\n"""
-          if old not in js: raise SystemExit('selection handler anchor not found')
-          js = js.replace(old, new, 1)
-
-          old = """  document.querySelectorAll('[data-bulk-action]').forEach(button=>button.addEventListener('click',async()=>{\n    try{button.disabled=true;await bulkAction(button.dataset.bulkAction);}catch(error){msg('Bulk update failed: '+error.message);}finally{button.disabled=false;}\n  }));\n"""
-          new = """  bulkPanel?.addEventListener('click',async event=>{\n    const button=event.target.closest('[data-bulk-action]');\n    if(!button)return;\n    try{button.disabled=true;await bulkAction(button.dataset.bulkAction);}catch(error){msg('Bulk update failed: '+error.message);}finally{button.disabled=false;updateBulkUi();}\n  });\n"""
-          if old not in js: raise SystemExit('bulk button handler anchor not found')
-          js = js.replace(old, new, 1)
-          js_path.write_text(js)
-
-          css_path = Path('assets/css/admin.css')
-          css = css_path.read_text()
-          css += r'''
-/* Bulk media editor: selection-first, explicit field changes, status-aware workflow actions. */
-.admin-bulk{display:grid;gap:14px;align-items:stretch;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--soft);transition:border-color .15s ease,box-shadow .15s ease}.admin-bulk.has-selection{border-color:rgba(59,125,35,.5);box-shadow:0 0 0 3px rgba(59,125,35,.07)}.admin-bulk-head,.admin-bulk-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.admin-bulk-title{display:grid;gap:2px}.admin-bulk-title strong{font-size:16px}.admin-bulk-title span{font-size:13px;color:var(--muted);font-weight:700}.admin-bulk-selection-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.admin-bulk-selection-tools label{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700}.admin-bulk-selection-tools input[type="checkbox"]{width:18px;height:18px}.admin-bulk-selection-tools button{padding:8px 11px}.admin-bulk-fields{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:12px;padding:14px;background:#fff;border:1px solid var(--line);border-radius:11px}.admin-bulk-fields label{display:grid;gap:6px;font-size:13px;font-weight:800}.admin-bulk-fields select,.admin-bulk-fields input{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font:inherit}.admin-bulk-fields [hidden]{display:none!important}.admin-bulk-footer>button{padding:11px 16px}.admin-bulk-workflow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.admin-bulk-workflow>span{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:800}.admin-bulk-workflow-buttons{display:flex;gap:8px;flex-wrap:wrap}.admin-bulk-workflow-buttons button{padding:10px 13px}.admin-bulk-workflow-buttons .primary{background:var(--green);color:#fff}.admin-bulk-workflow-buttons .danger{background:#8e2d27;color:#fff}.admin-bulk-workflow-buttons .bulk-publish{background:var(--orange);color:#fff}.admin-bulk-none{font-size:13px;color:var(--muted)}.admin-bulk-help{margin:0;color:var(--muted);font-size:13px}.admin-card.is-selected{border-color:var(--green);box-shadow:0 0 0 3px rgba(59,125,35,.09)}.admin-card.is-selected .admin-card-select{background:#edf6e9}.admin-bulk button:disabled{opacity:.5;cursor:not-allowed}
-@media(max-width:900px){.admin-bulk-fields{grid-template-columns:1fr 1fr}}
-@media(max-width:700px){.admin-bulk{padding:13px}.admin-bulk-head,.admin-bulk-footer{align-items:stretch;flex-direction:column}.admin-bulk-selection-tools{display:grid;grid-template-columns:1fr auto}.admin-bulk-fields{grid-template-columns:1fr}.admin-bulk-footer>button{width:100%}.admin-bulk-workflow{display:grid;gap:7px}.admin-bulk-workflow-buttons{display:grid;grid-template-columns:1fr 1fr}.admin-bulk-workflow-buttons button{width:100%}.admin-bulk-selection-tools button{width:auto}.admin-bulk-help{font-size:12px}}
-'''
-          css_path.write_text(css)
-
-          workflow = Path('.github/workflows/improve-bulk-media-editor.yml')
-          workflow.unlink()
+      - name: Apply bulk media editor improvement
+        run: python .github/scripts/improve_bulk_media_editor.py
       - name: Validate changed files
         run: |
           node --check assets/js/admin.js
@@ -127,6 +20,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add admin/index.html assets/js/admin.js assets/css/admin.css .github/workflows/improve-bulk-media-editor.yml
+          git add -A
           git commit -m "Improve bulk media editor UX"
           git push
