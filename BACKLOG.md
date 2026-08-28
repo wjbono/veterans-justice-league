@@ -1,401 +1,268 @@
 # Veterans Justice League Website Publish-Ready Backlog
 
-Last updated: 2026-08-25
+Last updated: 2026-08-28
 
-Goal: bring the replacement Veterans Justice League website to a state where the client can approve launch and the only remaining production action is the final DNS cutover from Google Sites to GitHub Pages, followed by verification.
+Goal: finish verification, load approved client content, complete release-candidate QC and client acceptance, then prepare the production-domain cutover from Google Sites to GitHub Pages.
 
 ## Status legend
 
-- [x] Complete
-- [ ] Not started / remaining
-- [~] In progress / partially implemented
-- [!] Blocked or dependent on external setup/approval
-
-## Foundation already completed
-
-- [x] GitHub repository created and connected: `wjbono/veterans-justice-league`
-- [x] GitHub Pages deployment workflow created
-- [x] Temporary GitHub Pages site deployed
-- [x] Existing production Google Sites deployment left untouched
-- [x] Core public pages created: Home, About, Programs, Housing, Behind-the-Wall Training, Outreach, Gallery, Events, Contact, Team
-- [x] Initial responsive styling implemented
-- [x] Exact VJL logo restored during Pages deployment and verified by file size + SHA-256 before publish
-- [x] Local placeholder imagery added so preview does not depend on broken external hotlinks
-- [x] Initial Cloudflare Worker/D1/R2 backend scaffold added under `worker/`
-- [x] Initial media-review/admin shell added under `/admin/`
-- [x] Custom `404.html` created for GitHub Pages
-- [x] Shared responsive/accessibility QC layer added under `assets/css/qc.css`
-- [x] Automated pre-deployment static-site validator added and required before Pages publish
-- [x] Published Pages artifact independently verified: exact logo checksum, static SEO metadata, noindex rules, and build-asset cleanup
-- [x] Live post-deployment smoke test added for all primary Pages routes, core assets, and custom 404 behavior
-- [x] JavaScript syntax validation added to deployment for public scripts, admin script, and Worker source
+- [x] Complete / verified
+- [~] Implemented but live verification still pending
+- [ ] Remaining
+- [!] Blocked by client input, external access, or launch approval
 
 ---
 
-# Phase 1: Finish Public-Site Functionality
+# Current project status
 
-## Navigation and page behavior
+The replacement site, GitHub Pages deployment, Cloudflare Worker/R2/D1 media backend, dynamic public Gallery, and client-facing media-management interface are built.
 
-- [x] Audit every desktop navigation link at the markup/routing level
-- [x] Audit every mobile navigation link at the markup/routing level
-- [x] Normalize all Programs links to the dedicated Programs landing page
-- [x] Add `aria-current` handling for active navigation
-- [x] Verify all buttons and CTAs at the markup/routing level
-- [x] Verify Donate links consistently target the published Stripe donation URL
-- [x] Verify Contact/Get Help links route to the Contact page
-- [x] Add appropriate empty states where content is not yet available
-- [x] Confirm Team page behavior while bios are unavailable
-- [x] Confirm Events page behavior when no current events are published
-- [x] Add dedicated Programs landing page so the Programs navigation item no longer routes directly to Housing
-- [x] Verify every primary deployed-site route returns successfully via post-deployment live smoke testing
-- [~] Manual browser interaction test remains for external destinations and interaction-specific behavior
+The media publishing path has been verified through a real published item:
 
-## Gallery experience
+`Upload → Pending → Approve → Generate derivatives → Publish → Public Gallery`
 
-- [x] Redesign Gallery as a landing page containing multiple gallery groups
-- [x] Support gallery groupings such as Housing, Behind-the-Wall, Outreach, Events, Team, Partners, and other approved categories
-- [x] Make each gallery open into its own photo collection
-- [x] Implement carousel/lightbox browsing within gallery collections
-- [x] Add previous/next controls
-- [x] Add keyboard navigation
-- [x] Add touch/swipe-friendly behavior for mobile
-- [x] Display captions where available
-- [x] Display accessible alt text
-- [x] Add modal focus containment/inert page background behavior
-- [x] Add adjacent-image preloading for carousel navigation
-- [~] Support gallery/event assignment from media metadata rather than hardcoded HTML — frontend and Worker API now support grouped metadata; live D1 connection still pending
-- [x] Keep homepage Recent Moments as a small preview linking into the full gallery experience
+The published image and its caption were confirmed visible on the public Gallery.
 
-## Responsive behavior
-
-- [~] Full desktop visual pass — code-level responsive review and fixes completed; live visual pass remains
-- [~] Full tablet visual pass — responsive rules implemented; live visual pass remains
-- [~] Full mobile visual pass — mobile wrapping/tap-target/form/carousel rules implemented; live visual pass remains
-- [~] Check navigation at intermediate viewport widths — resize-close and wrapping behavior implemented; live visual verification remains
-- [~] Check buttons, cards, forms, galleries, carousels, and footer wrapping — QC overrides added; live visual verification remains
+The authentication system has now been upgraded in code from a shared-token workflow to a multi-user system with Administrator and Editor roles. The code is complete, but the new Worker/D1 authentication deployment and live account bootstrap still require verification before that work is closed.
 
 ---
 
-# Phase 2: Complete the Cloudflare Media and Admin System
+# 1. Multi-user authentication and administration
 
-Status: [!] Requires manual Cloudflare account setup because the ChatGPT Cloudflare integration is not usable. Application code can continue to be completed before deployment.
+Tracking issue: GitHub issue #1, **Build multi-user admin authentication and user management**.
 
-## Cloudflare resources
+## Implemented
 
-- [ ] Create production R2 bucket for VJL media
-- [ ] Create production D1 database
-- [ ] Create/deploy Cloudflare Worker/API
-- [ ] Bind Worker to R2
-- [ ] Bind Worker to D1
-- [ ] Configure allowed frontend origins
-- [ ] Configure production-safe secrets/environment variables
-- [ ] Confirm Worker API is reachable from temporary GitHub Pages URL
+- [x] Individual username/password accounts
+- [x] Administrator and Editor roles
+- [x] Dedicated User Administration page
+- [x] Create user
+- [x] Edit display name and username
+- [x] Change role
+- [x] Enable/disable user
+- [x] Reset password
+- [x] Temporary-password / forced-password-change flow
+- [x] Delete user with confirmation
+- [x] Protect the final active Administrator from disable/delete/demotion
+- [x] Salted PBKDF2 password hashing
+- [x] Opaque persistent sessions with only token hashes stored in D1
+- [x] Session expiration and sign-out
+- [x] Session revocation on password reset, account disable, or deletion
+- [x] Login throttling / repeated-failure protection
+- [x] Record authenticated username for media actions instead of generic `admin`
+- [x] One-time first-Administrator bootstrap using the existing server-side `ADMIN_TOKEN`
+- [x] Remove raw shared token from normal client login flow
 
-## Upload-folder workflow
+## Still to verify live
 
-Implement and verify the locked folder model:
-
-- [~] `incoming/housing/` — Worker prefix support implemented; live R2 verification pending
-- [~] `incoming/behind-the-wall/` — Worker prefix support implemented; live R2 verification pending
-- [~] `incoming/outreach/` — Worker prefix support implemented; live R2 verification pending
-- [~] `incoming/events/` — Worker prefix support implemented; live R2 verification pending
-- [~] `incoming/team/` — Worker prefix support implemented; live R2 verification pending
-- [~] `incoming/partners/` — Worker prefix support implemented; live R2 verification pending
-- [~] `incoming/unsorted/` — Worker prefix support implemented; live R2 verification pending
-- [~] Category-specific folders pre-populate category — implemented in Worker sync; live verification pending
-- [~] Reviewer can change category — implemented in admin UI/API; live verification pending
-- [~] Unsorted uploads begin uncategorized — implemented in Worker sync; live verification pending
-- [~] Unsorted media cannot be approved until category is assigned — enforced by API; live verification pending
-
-## Media lifecycle
-
-Implement and verify:
-
-- [~] UPLOAD — represented by R2 object arrival before sync; live verification pending
-- [~] PENDING — implemented
-- [~] REVIEW — implemented
-- [~] APPROVED — implemented
-- [~] PROCESSING — implemented as lifecycle hook; real derivative processing remains incomplete
-- [~] PUBLISHED — implemented
-- [~] ARCHIVED — implemented
-- [~] REJECTED — implemented
-- [~] Rejected media moves to trash/quarantine instead of immediate deletion — rejected state + retention metadata implemented
-- [~] Retention period supported before permanent deletion — 30-day retention implemented
-- [~] Second safeguard/confirmation before permanent deletion — explicit authenticated `confirm="DELETE"` requirement implemented; not available in bulk actions
-- [~] Archived media can be restored/republished — implemented
-- [~] D1 retains metadata/history — schema and history writes implemented
-
-## Media review/admin interface
-
-Each image should support:
-
-- [~] Thumbnail preview — authenticated preview loading implemented; live R2 verification pending
-- [~] Larger preview — modal preview implemented; live R2 verification pending
-- [~] Filename — implemented
-- [~] Upload date — implemented
-- [~] EXIF/photo date when available — display field implemented; extraction/population still pending image-processing work
-- [~] Category dropdown — implemented
-- [~] Caption — implemented
-- [~] Alt text — implemented
-- [~] Optional event/gallery assignment — implemented
-- [~] Featured-image toggle — implemented
-- [~] Approve action — implemented
-- [~] Reject action — implemented
-- [~] Archive action where appropriate — implemented
-- [~] Review, publish, restore/republish actions — implemented
-- [x] Admin page explicitly marked `noindex,nofollow,noarchive`
-- [x] Admin status messaging exposed as an ARIA live status region
-
-Bulk actions:
-
-- [~] Bulk select — implemented
-- [~] Bulk category assignment — implemented
-- [~] Bulk gallery assignment — implemented
-- [~] Bulk approve — implemented
-- [~] Bulk publish — implemented
-- [~] Bulk reject — implemented
-- [~] Bulk archive where appropriate — implemented
-
-## Gallery metadata/API
-
-- [~] D1 `galleries` table implemented
-- [~] Default gallery definitions implemented and seedable from admin UI/API
-- [~] Public `GET /api/galleries` endpoint implemented
-- [~] Public media filtering by category/gallery implemented
-- [~] Admin gallery listing/seed endpoints implemented
-- [ ] Live D1 gallery metadata verification
-
-## Image processing
-
-On approval/publishing:
-
-- [ ] Validate file type/content
-- [ ] Correct orientation
-- [ ] Strip unnecessary/private EXIF metadata
-- [ ] Preserve useful metadata in D1
-- [ ] Generate thumbnail derivative
-- [ ] Generate normal web-size derivative
-- [ ] Generate larger/lightbox derivative
-- [ ] Generate WebP and/or AVIF where appropriate
-- [x] Retain original in R2 by design
-- [~] Store object keys and derivative keys in D1 — schema supports all keys; derivative generation still pending
+- [ ] Redeploy latest Worker authentication code to Cloudflare
+- [ ] Apply/update D1 authentication schema if required by deployment
+- [ ] Bootstrap the first Administrator account
+- [ ] Confirm Administrator login survives normal browser restart for intended session lifetime
+- [ ] Create a second Administrator or Editor test account
+- [ ] Verify Editor cannot access or invoke user-management functions
+- [ ] Verify create/edit/disable/enable/reset/delete operations end-to-end
+- [ ] Verify forced password change after an admin reset
+- [ ] Verify password reset revokes existing sessions
+- [ ] Verify disabled/deleted users lose access immediately
+- [ ] Verify final-Administrator safeguards live
+- [ ] Verify sign-out and session expiration
+- [ ] Close issue #1 after successful live verification
 
 ---
 
-# Phase 3: Connect the Public Site to Real Media
+# 2. Media workflow verification
 
-- [ ] Replace static gallery placeholders with Worker/D1/R2 media feed
-- [ ] Homepage Recent Moments pulls approved/published featured/recent images dynamically
-- [~] Gallery landing page pulls gallery definitions dynamically — API consumption implemented; awaiting live Worker/D1 data
-- [~] Individual gallery collections pull published media dynamically — API consumption implemented; awaiting live Worker/D1 data
-- [~] Only `PUBLISHED` media is publicly displayed — enforced in Worker public API; live verification pending
-- [~] Archived/rejected/pending media never appears publicly — enforced in Worker public API; live verification pending
-- [~] Verify category filters — API supports category filter; live verification pending
-- [~] Verify gallery/event filters — API supports gallery filter; live verification pending
-- [~] Verify featured-image behavior — sorting/metadata support implemented; live verification pending
-- [~] Verify public URLs and caching — frontend assets are commit-versioned and published Worker media is configured with public cache headers; final production-origin/CDN verification remains
-- [x] Verify graceful API-unavailable state — local grouped gallery preview remains usable without the backend
+## Verified
+
+- [x] Cloudflare Worker/API reachable from temporary GitHub Pages site
+- [x] R2 media storage connected
+- [x] D1 metadata storage connected
+- [x] Cloudflare Images derivative processing connected
+- [x] Direct admin upload reaches R2 and review queue
+- [x] Pending review state works
+- [x] Category/caption editing works
+- [x] Approval works
+- [x] Publish generates required image derivatives
+- [x] Failed derivative generation safely returns item to Approved and keeps it non-public
+- [x] Published media appears in public Gallery
+- [x] Public caption rendering works
+- [x] Rejected item can be restored out of Rejected
+- [x] Folder-marker bug identified and code fixed so zero-byte R2 folder markers are not treated as media
+- [x] Original image retained in R2
+- [x] Published derivatives strip original EXIF metadata
+- [x] Thumbnail, normal web, and large/lightbox WebP derivative support implemented
+
+## Remaining workflow tests
+
+- [ ] Redeploy/verify folder-marker cleanup fix and confirm the seven bogus zero-byte rejected records stay gone
+- [ ] Test `Unsorted` upload and confirm approval is blocked until category is assigned
+- [ ] Test reviewer changing a pre-populated category
+- [ ] Test Archive → confirm disappearance from public Gallery → Republish → confirm return
+- [ ] Test Rejected → Restore → normal review lifecycle
+- [ ] Test bulk select
+- [ ] Test bulk category assignment
+- [ ] Test bulk gallery assignment
+- [ ] Test bulk approve
+- [ ] Test bulk publish
+- [ ] Test bulk reject
+- [ ] Test bulk archive
+- [ ] Test malformed/unsupported/oversize image rejection
+- [ ] Verify EXIF/photo-date extraction with an image that contains usable date metadata
+- [ ] Verify 30-day rejected-item retention behavior
+- [ ] Verify guarded permanent deletion after retention period
+- [ ] Verify maintenance cleanup does not remove valid retained media
 
 ---
 
-# Phase 4: Load and Organize Real Client Content
+# 3. Public Gallery and dynamic media
 
-Media-source audit note: the photographic images recovered from `VJL_Client_Preview.html` are explicitly labeled as **mockup images** in that starter prototype. They must not be represented or promoted as authentic client/VJL photography. A direct server-side attempt to retrieve the currently published Google Sites image assets was also blocked by the Google image host with HTTP 403, so the redesign will not rely on fragile hotlinks or silently scrape those files.
+## Implemented / verified
 
-- [x] Audit recovered starter/prototype image provenance — recovered photographic assets are mockup-only, not approved client media
-- [!] Import approved VJL photo library — authentic source files are not present in the current project package; requires client-supplied media or the future Cloudflare/R2 ingest path
+- [x] Gallery landing page with grouped collections
+- [x] Housing, Behind-the-Wall, Outreach, Events, Team, and Partners gallery support
+- [x] Worker/D1/R2-backed public media feed
+- [x] Published-only public media enforcement
+- [x] Captions and alt-text support
+- [x] Gallery/lightbox navigation
+- [x] Previous/next controls
+- [x] Keyboard navigation
+- [x] Touch/swipe support
+- [x] Adjacent-image preloading
+- [x] Public Gallery verified with a real published image and caption
+- [x] Archived/rejected/pending items are excluded by the public API design
+
+## Remaining verification
+
+- [ ] Verify category filters live with multiple real images
+- [ ] Verify gallery/event filters live with multiple real images
+- [ ] Verify Featured ordering with multiple published images
+- [ ] Verify dynamic gallery covers with real content
+- [ ] Verify homepage Recent Moments against several published images
+- [ ] Verify public image caching from production/custom-domain origin after cutover
+
+---
+
+# 4. Load and organize approved client content
+
+Authentic client media is still needed for the final visual/content population. Starter-package mockup photography must not be represented as real VJL photography.
+
+- [!] Obtain/import approved VJL photo library
 - [ ] Categorize approved photos
-- [ ] Assign approved photos to galleries/events
+- [ ] Assign photos to galleries/events where appropriate
 - [ ] Add captions where appropriate
-- [ ] Add meaningful alt text
-- [ ] Select featured/recent images
-- [!] Replace remaining placeholder imagery — blocked until authentic approved VJL media is available
-- [x] Confirm all current public copy remains grounded in approved/current VJL information — compared against the currently published VJL Home, About, Housing, Behind-the-Wall, Outreach, Contact, and Team pages on 2026-08-25
+- [ ] Add meaningful accessibility alt text
+- [ ] Select Featured / Recent Moments images
+- [!] Replace remaining placeholder imagery with approved VJL media
 - [ ] Obtain and add client-approved Team bios if desired for launch
-- [ ] Obtain and add any client-approved event updates if desired for launch
-- [x] Confirm no invented claims, statistics, programs, people, partnerships, contact information, or addresses are present in the current public-page copy
+- [ ] Obtain and add current client-approved event information if desired for launch
+- [x] Public copy currently used on the redesign is grounded in verified/current VJL information rather than invented claims
+- [x] Existing VJL logo remains the exact locked brand asset
 
 ---
 
-# Phase 5: Production Polish and Quality Control
+# 5. Final website QC and polish
+
+## Browser / responsive
+
+- [ ] Final desktop visual pass
+- [ ] Final tablet visual pass
+- [ ] Final mobile visual pass
+- [ ] Check intermediate viewport widths
+- [ ] Chrome functional pass
+- [ ] Edge functional pass
+- [ ] Safari functional pass where available
+- [ ] Mobile-browser functional pass
+- [ ] Check browser console for errors
 
 ## Accessibility
 
-- [~] Heading hierarchy audit — event hierarchy corrected; full page-by-page live audit remains
-- [~] Keyboard-only navigation audit — mobile navigation, gallery, and admin keyboard behavior implemented; live keyboard testing remains
-- [~] Focus-state audit — consistent `:focus-visible` treatment and skip-link focus behavior implemented; live test remains
-- [~] Color-contrast audit — primary green/muted text passed code-level review; Donate orange and footer fine-print contrast corrected; full visual audit remains
-- [~] Alt-text audit — logo/footer treatment normalized and gallery supports media alt text; real client media still pending
-- [~] Carousel accessibility audit — keyboard controls, focus containment, inert background, labeled controls, captions, alt text, counter announcements, and Escape close implemented; live QC remains
-- [~] Admin preview/modal accessibility — keyboard close and labeled controls implemented; final live QC remains
-- [~] Form accessibility audit — form heading, iframe title, direct-form fallback, and mobile sizing added; live embedded-form test remains
-- [~] Skip-link verification — focusable main target and visible focus treatment implemented; live keyboard verification remains
-- [x] Mobile menu control is explicitly associated with the controlled navigation via `aria-controls`
-- [x] Reduced-motion support implemented
-- [x] Forced-colors/high-contrast fallback rules implemented
-- [x] External new-tab links receive accessible labels and safe `noopener noreferrer`
+- [ ] Final page-by-page heading hierarchy audit
+- [ ] Keyboard-only navigation test
+- [ ] Focus-state test
+- [ ] Full color-contrast review
+- [ ] Final alt-text audit after real client images are loaded
+- [ ] Live carousel/lightbox accessibility test
+- [ ] Live admin modal/forms accessibility test
+- [ ] Live skip-link test
 
-## SEO and sharing
+Already implemented: reduced-motion support, forced-colors support, accessible external-link handling, mobile-menu ARIA association, modal keyboard controls, and focus management.
 
-- [x] Unique public page titles
-- [x] Descriptive public meta descriptions
-- [x] Canonical URL strategy for production domain — canonical tags are built into static HTML before deployment
-- [x] Open Graph metadata — built into static HTML before deployment and validated
-- [~] Social share image — exact VJL logo used as current share image; dedicated 1200×630 launch graphic still pending
-- [x] Favicon/site icon uses the exact VJL logo
-- [x] `sitemap.xml`
-- [x] `robots.txt` with `/admin/` excluded
-- [x] Structured data — Organization schema built into homepage static HTML and validated
-- [x] Admin and 404 pages excluded from indexing via static meta robots directives
+## Functional
 
-## Performance
+- [ ] Test all external links in browser
+- [ ] Test Stripe Donate destination live
+- [ ] Test Contact form submission live
+- [ ] Test Get Help flow end-to-end
+- [ ] Final Gallery/lightbox interaction test with real media
+- [ ] Final admin/media workflow test with multi-user authentication
 
-- [ ] Optimize final client-media dimensions and compression
-- [x] Lazy loading applied to non-hero images and gallery covers
-- [x] Async image decoding applied to built page images
-- [x] Homepage hero receives high fetch priority
-- [x] Carousel preloads adjacent images
-- [ ] Verify modern image formats — dependent on final image-processing pipeline
-- [x] Minimize render-blocking resources where practical — public scripts remain at the end of the document, local assets remain small, and deployment now enforces page-shell/asset size budgets
-- [~] Verify production caching strategy — CSS/JS are versioned with the deployment commit and Worker published media is configured with cache headers; final custom-domain/CDN verification remains
-- [~] Check final page weight on mobile — static HTML/CSS/JS budgets are now deployment-gated; final media payload cannot be measured until authentic client images and derivative processing are available
-- [ ] Run Lighthouse-style performance/accessibility review against deployed release candidate
+## Performance / SEO / cleanup
 
-## Functional QC
+- [ ] Optimize final client-media dimensions/compression as needed after the real library is loaded
+- [ ] Run Lighthouse-style performance/accessibility review against release candidate
+- [ ] Verify final production caching strategy
+- [ ] Verify final mobile page weight with real media
+- [ ] Create dedicated 1200×630 social-sharing image if desired for launch
+- [ ] Remove remaining debug/test content
+- [ ] Remove remaining placeholder/development labels once real content is loaded
+- [ ] Final README/deployment/runbook consistency pass
 
-- [x] Static internal-link target audit — all referenced public HTML targets exist in repository
-- [x] Deployment gate validates required public files, page structure, metadata, local targets, skip links, accessibility hooks, external-link safety, image behavior, and performance budgets
-- [x] JavaScript syntax checks run before every deployment for public/admin scripts and Worker source
-- [x] Latest deployed Pages artifact independently inspected after successful workflow completion
-- [x] Test all primary internal page URLs on deployed site — post-deployment smoke test confirms every primary route responds successfully
-- [~] Test all external links on deployed site — URLs normalized; manual browser verification remains
-- [~] Test Donate flow — consistent Stripe destination verified in markup; live transaction-page check remains
-- [~] Test Contact form — embedded form plus direct fallback implemented; live submission test remains
-- [x] Test Get Help route availability — Contact target is statically validated and live Contact route is smoke-tested after deployment
-- [~] Test galleries/carousels — implementation complete; deployed visual/interaction QC remains
-- [ ] Test admin workflow end-to-end against live Worker/R2/D1
-- [ ] Test upload → review → approve → publish → archive → republish
-- [ ] Test rejection/quarantine/restore flow
-- [ ] Test guarded permanent-deletion flow after retention period
-- [ ] Test malformed/unsupported image upload handling
-- [x] Test 404 page — post-deployment smoke test confirms HTTP 404 and the custom VJL 404 page content
-- [ ] Check browser console for errors
-- [ ] Check Chrome
-- [ ] Check Edge
-- [ ] Check Safari where available
-- [ ] Check mobile browser behavior
-
-## Production cleanup
-
-- [~] Remove development-only wording — public footer development wording is stripped at build time; intentional placeholder/media-development copy remains until approved photography is available
-- [ ] Remove debug/test content
-- [!] Remove temporary placeholder labels once real images are loaded — blocked until authentic approved VJL media is available
-- [x] Remove unused/non-site files from published artifact — deployment packaging strips build files, `.gitkeep`, base64 chunks, backups, temp files, Worker source, repository docs, and GitHub metadata
-- [~] Confirm README/deployment documentation matches final architecture — Worker documentation updated; final release documentation remains
+Already complete: page titles/descriptions, canonical strategy, Open Graph metadata, sitemap, robots rules, Organization structured data, favicon/logo handling, internal-link validation, deployment smoke tests, JavaScript syntax validation, static performance budgets, custom 404, lazy loading, async decoding, and published-artifact cleanup.
 
 ---
 
-# Phase 6: Client Acceptance
+# 6. Client acceptance
 
-- [ ] Provide temporary GitHub Pages URL for final client review
+- [x] Temporary GitHub Pages preview exists
 - [ ] Client approves desktop layout
 - [ ] Client approves mobile layout
 - [ ] Client approves wording/content
 - [ ] Client approves real photos and galleries
 - [ ] Client approves donation flow
 - [ ] Client approves contact/help flow
-- [ ] Client approves admin/media workflow
+- [ ] Client approves Media Manager and user-administration workflow
 - [ ] Resolve client-requested changes
 - [ ] Freeze client-approved release candidate
-- [ ] Limit post-freeze work to approved changes and bug fixes
+- [ ] After freeze, limit work to approved changes and bug fixes
 
 ---
 
-# Phase 7: Launch Preparation
+# 7. Launch preparation
 
-## Domain and GitHub Pages
+Do not replace the existing Google Sites production site until explicit launch approval.
 
-- [ ] Configure `veteransjusticeleague.com` as GitHub Pages custom domain when client authorizes launch preparation
-- [ ] Confirm GitHub Pages production-domain requirements
-- [ ] Verify HTTPS configuration readiness
+## Production configuration
 
-## Cloudflare production configuration
-
-- [ ] Set production frontend origin/allowlist
-- [ ] Confirm Worker production URL
-- [ ] Confirm R2 public-media delivery strategy
-- [ ] Confirm production D1 database/bindings
-- [ ] Confirm authentication/security for admin endpoints
+- [ ] Configure `veteransjusticeleague.com` as the GitHub Pages custom domain when authorized
+- [ ] Confirm final Worker production origin / allowed-origin configuration
+- [ ] Confirm final R2/D1/Images bindings
+- [ ] Confirm multi-user admin authentication/security on production origin
 - [ ] Confirm no secrets are exposed in frontend source
+- [ ] Verify HTTPS behavior on the final domain
+- [ ] Verify apex/`www` redirect behavior as intended
 
-## DNS cutover plan
+## DNS cutover / rollback
 
-- [ ] Record current Google Sites DNS records before changes
-- [ ] Document exact replacement DNS records
+- [ ] Record current Google Sites DNS records before changing anything
+- [ ] Document exact replacement GitHub Pages DNS records
 - [ ] Prepare rollback records/instructions
-- [ ] Identify expected DNS/HTTPS propagation behavior
-- [ ] Confirm no DNS change is made before explicit client authorization
-
-## Redirects and compatibility
-
-- [ ] Inventory existing public Google Sites URLs
-- [ ] Determine which legacy paths need redirects
-- [ ] Implement/test redirect strategy where possible
-- [ ] Check inbound links/bookmarks that should continue working
-
-## Final pre-launch test
-
-- [ ] Production release candidate passes complete QC
-- [x] GitHub Pages deployment succeeds and now includes post-deployment live route/asset/404 smoke tests
-- [ ] Worker/API healthy
-- [ ] D1 healthy
-- [ ] R2 healthy
-- [ ] Public galleries populate correctly
-- [ ] Admin workflow works from production-configured frontend
-- [ ] Donation works
-- [ ] Contact/Get Help works
-- [ ] Client gives explicit launch approval
+- [ ] Document expected DNS/HTTPS propagation behavior
+- [ ] Obtain explicit client authorization for cutover
+- [ ] Switch DNS from Google Sites to GitHub Pages
+- [ ] Verify production site, SSL, Gallery, admin login, uploads, publishing, Donate, and Contact after cutover
+- [ ] Keep rollback information until production is stable
 
 ---
 
-# Launch Day
+# Definition of publish-ready
 
-These items are intentionally NOT performed until the client explicitly authorizes the production switch.
+The replacement site is ready for production cutover when:
 
-- [ ] Apply DNS changes from Google Sites to GitHub Pages
-- [ ] Wait for/verify DNS resolution
-- [ ] Verify production homepage
-- [ ] Verify HTTPS/certificate
-- [ ] Verify all primary pages
-- [ ] Verify Worker/API from production origin
-- [ ] Verify gallery/media delivery
-- [ ] Verify admin access/workflow
-- [ ] Verify Donate
-- [ ] Verify Contact/Get Help
-- [ ] Check mobile production site
-- [ ] Check console/network errors
-- [ ] Monitor initial launch behavior
-
-## Rollback trigger
-
-If a launch-blocking issue appears during cutover:
-
-- [ ] Restore recorded pre-launch DNS values
-- [ ] Confirm Google Sites becomes reachable again
-- [ ] Resolve issue on temporary GitHub Pages deployment
-- [ ] Repeat launch verification before another cutover
-
----
-
-# Publish-Ready Definition of Done
-
-The site is considered **publish-ready** when:
-
-1. Public pages and gallery/carousel functionality are complete.
-2. The real R2/D1/Worker media system is deployed and connected.
-3. Admin upload/review/publish/archive/reject workflows work end-to-end.
-4. Approved client media and content are loaded.
-5. Desktop/mobile/accessibility/performance/functional QC passes.
-6. Client has approved the release candidate.
-7. Production domain, Worker, DNS, HTTPS, redirect, and rollback plans are prepared.
-8. The only remaining launch action is explicit client authorization followed by DNS cutover and verification.
+1. Multi-user authentication is live and verified.
+2. Media upload/review/approve/publish/archive/reject workflows pass end-to-end testing.
+3. Approved VJL media/content is loaded and placeholders are removed or explicitly approved.
+4. Desktop/mobile/accessibility/performance/functional QC passes.
+5. The client approves the release candidate.
+6. Production domain, Worker, DNS, HTTPS, and rollback preparation are complete.
+7. The only remaining action is explicit authorization followed by DNS cutover and final production verification.
