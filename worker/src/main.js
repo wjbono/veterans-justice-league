@@ -2,7 +2,7 @@ import worker from './index.js';
 import {CATEGORIES,INCOMING,MAX_UPLOAD_BYTES,validateUpload} from './media-policy.js';
 
 const SESSION_SECONDS=7*24*60*60;
-const PASSWORD_ITERATIONS=120000;
+const PASSWORD_ITERATIONS=100000;
 const LOGIN_WINDOW_MS=15*60*1000;
 const LOGIN_LOCK_MS=15*60*1000;
 const LOGIN_MAX_FAILURES=5;
