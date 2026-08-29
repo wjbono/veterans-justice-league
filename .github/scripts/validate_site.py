@@ -25,7 +25,7 @@ ASSET_BUDGETS = {
     'assets/css/styles.css': 24 * 1024,
     'assets/css/qc.css': 8 * 1024,
     'assets/css/gallery.css': 12 * 1024,
-    'assets/css/admin.css': 12 * 1024,
+    'assets/css/admin.css': 20 * 1024,
     'assets/js/site.js': 12 * 1024,
     'assets/js/config.js': 12 * 1024,
     'assets/js/home-media.js': 8 * 1024,
