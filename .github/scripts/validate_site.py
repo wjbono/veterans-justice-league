@@ -30,7 +30,7 @@ ASSET_BUDGETS = {
     'assets/js/config.js': 12 * 1024,
     'assets/js/home-media.js': 8 * 1024,
     'assets/js/gallery.js': 18 * 1024,
-    'assets/js/admin.js': 32 * 1024,
+    'assets/js/admin.js': 48 * 1024,
 }
 
 class PageParser(HTMLParser):

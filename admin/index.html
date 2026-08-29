@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="robots" content="noindex,nofollow,noarchive">
+  
   <meta name="color-scheme" content="light">
   <title>Media Manager | Veterans Justice League</title>
-  <link rel="stylesheet" href="../assets/css/styles.css">
-  <link rel="stylesheet" href="../assets/css/admin.css?v=20260828-bulk3a">
-</head>
+  <link rel="stylesheet" href="../assets/css/styles.css?v=dev">
+  <link rel="stylesheet" href="../assets/css/admin.css?v=dev">
+<meta name="robots" content="noindex,nofollow,noarchive"><link rel="icon" type="image/png" href="../assets/images/vjl-logo.png"><link rel="stylesheet" data-vjl-qc href="../assets/css/qc.css?v=dev"></head>
 <body>
 <div class="site">
   <header class="header">
     <div class="wrap header-inner">
-      <a class="brand" href="../index.html"><img class="logo" src="../assets/images/vjl-logo.png" alt="Veterans Justice League"></a>
+      <a class="brand" href="../index.html"><img class="logo" src="../assets/images/vjl-logo.png" alt="Veterans Justice League" decoding="async"></a>
       <div class="admin-header-title">Website Administration</div>
       <div class="admin-account" data-admin-account hidden>
         <div class="admin-account-copy"><strong data-admin-user></strong><span data-admin-role></span></div>
@@ -126,68 +126,7 @@
                 </select>
               </label>
               <button class="secondary" type="button" data-refresh>Refresh</button>
-              <button class="secondary admin-bulk-mode-toggle" type="button" data-bulk-mode-toggle>Bulk edit</button>
-            </div>
-
-            <div class="admin-bulk" data-bulk-panel hidden>
-              <div class="admin-bulk-main">
-                <div class="admin-bulk-title">
-                  <strong data-selection-count>0 selected</strong>
-                  <span data-bulk-instruction>Select the photos you want to work with.</span>
-                </div>
-                <div class="admin-bulk-selection-tools">
-                  <label><input type="checkbox" data-select-all> Select all visible</label>
-                  <button class="secondary" type="button" data-clear-selection>Clear</button>
-                </div>
-                <div class="admin-bulk-workflow">
-                  <span>Move selected</span>
-                  <div class="admin-bulk-workflow-buttons" data-bulk-workflow-actions></div>
-                </div>
-                <button class="secondary" type="button" data-bulk-edit-details>Edit details</button>
-                <button class="secondary" type="button" data-bulk-mode-done>Done</button>
-              </div>
-
-              <div class="admin-bulk-editor" data-bulk-editor hidden>
-                <div class="admin-bulk-editor-head">
-                  <div><strong>Edit selected photos</strong><span>Only fields you change below will be updated.</span></div>
-                  <button class="secondary" type="button" data-bulk-editor-close>Close</button>
-                </div>
-                <div class="admin-bulk-fields">
-                  <label>Website section
-                    <select data-bulk-category aria-label="Set website section for selected photos">
-                      <option value="">No change</option>
-                      <option value="housing">Housing</option>
-                      <option value="behind-the-wall">Behind-the-Wall</option>
-                      <option value="outreach">Outreach</option>
-                      <option value="events">Events</option>
-                      <option value="team">Team</option>
-                      <option value="partners">Partners</option>
-                      <option value="__clear__">Unsorted / clear section</option>
-                    </select>
-                  </label>
-                  <label>Gallery / event
-                    <select data-bulk-gallery-mode aria-label="Gallery or event bulk edit mode">
-                      <option value="keep">No change</option>
-                      <option value="set">Set same gallery / event</option>
-                      <option value="clear">Clear gallery / event</option>
-                    </select>
-                  </label>
-                  <label data-bulk-gallery-value hidden>Gallery / event name
-                    <input type="text" placeholder="Enter gallery or event name" data-bulk-gallery aria-label="Gallery or event name for selected photos">
-                  </label>
-                  <label>Featured image
-                    <select data-bulk-featured aria-label="Featured status for selected photos">
-                      <option value="">No change</option>
-                      <option value="true">Mark as featured</option>
-                      <option value="false">Mark as not featured</option>
-                    </select>
-                  </label>
-                </div>
-                <div class="admin-bulk-editor-actions">
-                  <button class="primary" type="button" data-bulk-action="save">Apply changes</button>
-                  <button class="secondary" type="button" data-bulk-editor-cancel>Cancel</button>
-                </div>
-              </div>
+              <button class="primary admin-bulk-mode-toggle" type="button" data-mass-editor-open>Mass edit photos</button>
             </div>
           </div>
           <div class="status-box" data-admin-status role="status" aria-live="polite">Loading…</div>
@@ -207,10 +146,32 @@
     </div>
   </main>
 
+  <section class="mass-editor" data-mass-editor hidden aria-labelledby="mass-editor-title">
+    <header class="mass-editor-header">
+      <div><p class="eyebrow">Photo library</p><h2 id="mass-editor-title">Mass edit photos</h2><p>Edit each photo directly. Use the fill tools to apply one value to checked rows.</p></div>
+      <button class="secondary" type="button" data-mass-editor-close>Close</button>
+    </header>
+    <div class="mass-editor-fillbar">
+      <label><input type="checkbox" data-mass-select-all> Select all</label>
+      <strong data-mass-count>0 selected</strong>
+      <label>Fill section<select data-mass-fill-category><option value="">Choose…</option><option value="__clear__">Unsorted</option><option value="housing">Housing</option><option value="behind-the-wall">Behind-the-Wall</option><option value="outreach">Outreach</option><option value="events">Events</option><option value="team">Team</option><option value="partners">Partners</option></select></label>
+      <label>Fill gallery/event<input type="text" data-mass-fill-gallery placeholder="Name or leave blank"></label>
+      <label>Fill Featured<select data-mass-fill-featured><option value="">Choose…</option><option value="true">Yes</option><option value="false">No</option></select></label>
+      <button class="secondary" type="button" data-mass-apply-fill>Apply to checked rows</button>
+    </div>
+    <div class="mass-editor-table-wrap">
+      <table class="mass-editor-table">
+        <thead><tr><th scope="col">Use</th><th scope="col">Photo</th><th scope="col">Section</th><th scope="col">Gallery / event</th><th scope="col">Caption</th><th scope="col">Image description</th><th scope="col">Featured</th><th scope="col">Next action</th></tr></thead>
+        <tbody data-mass-editor-rows></tbody>
+      </table>
+    </div>
+    <footer class="mass-editor-footer"><span data-mass-editor-status role="status" aria-live="polite">No unsaved changes.</span><button class="secondary" type="button" data-mass-editor-cancel>Cancel</button><button class="primary" type="button" data-mass-editor-save>Save all changes</button></footer>
+  </section>
+
   <footer class="footer">
     <div class="wrap">
       <div class="footer-grid">
-        <img class="footer-logo" src="../assets/images/vjl-logo.png" alt="Veterans Justice League">
+        <img class="footer-logo" src="../assets/images/vjl-logo.png" alt="Veterans Justice League" decoding="async">
         <div class="footer-info"><strong>Veterans Justice League</strong>3617 Betty Dr. STE G<br>Colorado Springs, CO 80917<br><a href="tel:+17193068947">719-306-8947</a></div>
         <div class="footer-links"><a href="../about.html">About</a><a href="../programs.html">Programs</a><a href="../gallery.html">Gallery</a><a href="../events.html">Events</a><a href="../contact.html">Contact</a></div>
       </div>
@@ -222,14 +183,14 @@
 <div class="admin-preview-modal" data-admin-preview hidden role="dialog" aria-modal="true" aria-labelledby="admin-preview-title">
   <div class="admin-preview-panel">
     <div class="admin-preview-head"><h2 id="admin-preview-title" data-admin-preview-title>Media preview</h2><button class="admin-preview-close" type="button" data-admin-preview-close aria-label="Close preview">×</button></div>
-    <img class="admin-preview-image" data-admin-preview-image src="" alt="">
+    <img class="admin-preview-image" data-admin-preview-image alt="" decoding="async" loading="lazy">
   </div>
 </div>
 
-<script src="../assets/js/site.js?v=20260824-2026"></script>
-<script src="../assets/js/config.js?v=20260824-2026"></script>
-<script src="../assets/js/admin-auth.js?v=20260827-multiuser1"></script>
-<script src="../assets/js/admin.js?v=20260828-bulk3a"></script>
-<script src="../assets/js/admin-upload.js?v=20260827-multiuser1"></script>
+<script src="../assets/js/site.js?v=dev"></script>
+<script src="../assets/js/config.js?v=dev"></script>
+<script src="../assets/js/admin-auth.js?v=dev"></script>
+<script src="../assets/js/admin.js?v=dev"></script>
+<script src="../assets/js/admin-upload.js?v=dev"></script>
 </body>
 </html>
