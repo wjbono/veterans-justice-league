@@ -8,6 +8,7 @@
   <title>Media Manager | Veterans Justice League</title>
   <link rel="stylesheet" href="../assets/css/styles.css?v=dev">
   <link rel="stylesheet" href="../assets/css/admin.css?v=dev">
+  <link rel="stylesheet" href="../assets/css/mass-editor.css?v=dev">
 <meta name="robots" content="noindex,nofollow,noarchive"><link rel="icon" type="image/png" href="../assets/images/vjl-logo.png"><link rel="stylesheet" data-vjl-qc href="../assets/css/qc.css?v=dev"></head>
 <body>
 <div class="site">
@@ -126,7 +127,7 @@
                 </select>
               </label>
               <button class="secondary" type="button" data-refresh>Refresh</button>
-              <button class="primary admin-bulk-mode-toggle" type="button" data-mass-editor-open>Mass edit photos</button>
+              <button class="primary admin-bulk-mode-toggle" type="button" data-mass-editor-open>Mass edit</button>
             </div>
           </div>
           <div class="status-box" data-admin-status role="status" aria-live="polite">Loading…</div>
@@ -148,24 +149,25 @@
 
   <section class="mass-editor" data-mass-editor hidden aria-labelledby="mass-editor-title">
     <header class="mass-editor-header">
-      <div><p class="eyebrow">Photo library</p><h2 id="mass-editor-title">Mass edit photos</h2><p>Edit each photo directly. Use the fill tools to apply one value to checked rows.</p></div>
+      <div><h2 id="mass-editor-title">Mass edit</h2><p>Select photos, set the shared fields, and apply.</p></div>
       <button class="secondary" type="button" data-mass-editor-close>Close</button>
     </header>
-    <div class="mass-editor-fillbar">
-      <label><input type="checkbox" data-mass-select-all> Select all</label>
-      <strong data-mass-count>0 selected</strong>
-      <label>Fill section<select data-mass-fill-category><option value="">Choose…</option><option value="__clear__">Unsorted</option><option value="housing">Housing</option><option value="behind-the-wall">Behind-the-Wall</option><option value="outreach">Outreach</option><option value="events">Events</option><option value="team">Team</option><option value="partners">Partners</option></select></label>
-      <label>Fill gallery/event<input type="text" data-mass-fill-gallery placeholder="Name or leave blank"></label>
-      <label>Fill Featured<select data-mass-fill-featured><option value="">Choose…</option><option value="true">Yes</option><option value="false">No</option></select></label>
-      <button class="secondary" type="button" data-mass-apply-fill>Apply to checked rows</button>
+    <div class="mass-editor-simple">
+      <div class="mass-picker">
+        <div class="mass-picker-head"><label><input type="checkbox" data-mass-select-all> Select all</label><strong data-mass-count>0 selected</strong></div>
+        <div class="mass-picker-grid" data-mass-editor-items></div>
+      </div>
+      <div class="mass-shared-fields">
+        <h3>Set fields for selected photos</h3>
+        <p>Blank fields will not be changed.</p>
+        <label>Website section<select data-mass-category><option value="">No change</option><option value="__clear__">Unsorted</option><option value="housing">Housing</option><option value="behind-the-wall">Behind-the-Wall</option><option value="outreach">Outreach</option><option value="events">Events</option><option value="team">Team</option><option value="partners">Partners</option></select></label>
+        <label>Gallery / event<input type="text" data-mass-gallery placeholder="No change"></label>
+        <label>Caption<input type="text" data-mass-caption placeholder="No change"></label>
+        <label>Image description<textarea rows="3" data-mass-alt placeholder="No change"></textarea></label>
+        <label>Featured<select data-mass-featured><option value="">No change</option><option value="true">Yes</option><option value="false">No</option></select></label>
+      </div>
     </div>
-    <div class="mass-editor-table-wrap">
-      <table class="mass-editor-table">
-        <thead><tr><th scope="col">Use</th><th scope="col">Photo</th><th scope="col">Section</th><th scope="col">Gallery / event</th><th scope="col">Caption</th><th scope="col">Image description</th><th scope="col">Featured</th><th scope="col">Next action</th></tr></thead>
-        <tbody data-mass-editor-rows></tbody>
-      </table>
-    </div>
-    <footer class="mass-editor-footer"><span data-mass-editor-status role="status" aria-live="polite">No unsaved changes.</span><button class="secondary" type="button" data-mass-editor-cancel>Cancel</button><button class="primary" type="button" data-mass-editor-save>Save all changes</button></footer>
+    <footer class="mass-editor-footer"><span data-mass-editor-status role="status" aria-live="polite">Select photos to edit.</span><button class="secondary" type="button" data-mass-editor-cancel>Cancel</button><button class="primary" type="button" data-mass-editor-save>Apply to selected</button></footer>
   </section>
 
   <footer class="footer">

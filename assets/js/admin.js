@@ -66,15 +66,16 @@
   const massEditorOpen=document.querySelector('[data-mass-editor-open]');
   const massEditorClose=document.querySelector('[data-mass-editor-close]');
   const massEditorCancel=document.querySelector('[data-mass-editor-cancel]');
-  const massEditorRows=document.querySelector('[data-mass-editor-rows]');
+  const massEditorItems=document.querySelector('[data-mass-editor-items]');
   const massEditorSave=document.querySelector('[data-mass-editor-save]');
   const massEditorStatus=document.querySelector('[data-mass-editor-status]');
   const massSelectAll=document.querySelector('[data-mass-select-all]');
   const massCount=document.querySelector('[data-mass-count]');
-  const massFillCategory=document.querySelector('[data-mass-fill-category]');
-  const massFillGallery=document.querySelector('[data-mass-fill-gallery]');
-  const massFillFeatured=document.querySelector('[data-mass-fill-featured]');
-  const massApplyFill=document.querySelector('[data-mass-apply-fill]');
+  const massCategory=document.querySelector('[data-mass-category]');
+  const massGallery=document.querySelector('[data-mass-gallery]');
+  const massCaption=document.querySelector('[data-mass-caption]');
+  const massAlt=document.querySelector('[data-mass-alt]');
+  const massFeatured=document.querySelector('[data-mass-featured]');
   const objectUrls=new Set();
   let currentSession=null;
   let bulkMode=false;
@@ -279,33 +280,13 @@
     if(!response.ok)throw new Error(data.error||('HTTP '+response.status));
   }
 
-  function massActionOptions(status){
-    const options={
-      pending:[['','No status change'],['review','Start review'],['approve','Approve'],['reject','Reject']],
-      review:[['','No status change'],['approve','Approve'],['reject','Reject']],
-      approved:[['','No status change'],['publish','Publish']],
-      processing:[['','No status change']],
-      published:[['','No status change'],['archive','Archive']],
-      archived:[['','No status change'],['restore','Republish']],
-      rejected:[['','No status change'],['restore','Restore to pending']]
-    };
-    return (options[status]||options.processing).map(([value,label])=>`<option value="${value}">${label}</option>`).join('');
-  }
-
-  function massRow(item){
+  function massItem(item){
     const title=escapeHtml(item.filename||item.object_key||'Media item');
-    const row=document.createElement('tr');
-    row.dataset.id=item.id;
-    row.innerHTML=`
-      <td><input type="checkbox" data-mass-select aria-label="Select ${title}"></td>
-      <td class="mass-photo"><button type="button" data-mass-preview-url="${escapeHtml(item.preview_url||item.public_url||'')}" data-large-preview-url="${escapeHtml(item.large_preview_url||item.large_url||item.preview_url||item.public_url||'')}" data-preview-title="${title}" aria-label="Preview ${title}"><span>Loading…</span></button><div><strong>${title}</strong><small>${escapeHtml(STATUS_LABELS[item.status]||item.status)}</small></div></td>
-      <td><select data-mass-field="category" aria-label="Section for ${title}"><option value="">Unsorted</option>${categoryOptions(item.category)}</select></td>
-      <td><input data-mass-field="gallery" value="${escapeHtml(item.gallery||'')}" placeholder="Optional"></td>
-      <td><textarea data-mass-field="caption" rows="2" placeholder="Optional caption">${escapeHtml(item.caption||'')}</textarea></td>
-      <td><textarea data-mass-field="alt_text" rows="2" placeholder="Describe the photo">${escapeHtml(item.alt_text||'')}</textarea></td>
-      <td class="mass-featured"><input type="checkbox" data-mass-field="featured" ${item.featured?'checked':''} aria-label="Featured ${title}"></td>
-      <td><select data-mass-action aria-label="Next action for ${title}">${massActionOptions(item.status)}</select></td>`;
-    return row;
+    const el=document.createElement('label');
+    el.className='mass-picker-item';
+    el.dataset.id=item.id;
+    el.innerHTML=`<input type="checkbox" data-mass-select aria-label="Select ${title}"><span class="mass-picker-thumb" data-mass-preview-url="${escapeHtml(item.preview_url||item.public_url||'')}"><span>Loading…</span></span><strong>${title}</strong>`;
+    return el;
   }
 
   async function hydrateMassPreview(button){
@@ -314,75 +295,57 @@
   }
 
   function updateMassCount(){
-    const boxes=[...massEditorRows.querySelectorAll('[data-mass-select]')];
+    const boxes=[...massEditorItems.querySelectorAll('[data-mass-select]')];
     const checked=boxes.filter(box=>box.checked);
     if(massCount)massCount.textContent=`${checked.length} selected`;
     if(massSelectAll){massSelectAll.checked=boxes.length>0&&checked.length===boxes.length;massSelectAll.indeterminate=checked.length>0&&checked.length<boxes.length;}
-  }
-
-  function updateMassDirty(){
-    const count=massEditorRows.querySelectorAll('tr.is-dirty').length;
-    if(massEditorStatus)massEditorStatus.textContent=count?`${count} photo${count===1?' has':'s have'} unsaved changes.`:'No unsaved changes.';
+    if(massEditorSave)massEditorSave.disabled=checked.length===0;
+    if(massEditorStatus)massEditorStatus.textContent=checked.length?`${checked.length} photo${checked.length===1?'':'s'} selected.`:'Select photos to edit.';
   }
 
   function openMassEditor(){
     if(!currentItems.length){msg('There are no photos in this filtered view.');return;}
-    massEditorRows.innerHTML='';
-    currentItems.forEach(item=>massEditorRows.append(massRow(item)));
+    massEditorItems.innerHTML='';
+    currentItems.forEach(item=>massEditorItems.append(massItem(item)));
+    massCategory.value='';massGallery.value='';massCaption.value='';massAlt.value='';massFeatured.value='';
     massEditor.hidden=false;
     document.body.classList.add('mass-editor-open');
-    massEditorRows.querySelectorAll('[data-mass-preview-url]').forEach(hydrateMassPreview);
-    updateMassCount();updateMassDirty();massEditorClose?.focus();
+    massEditorItems.querySelectorAll('[data-mass-preview-url]').forEach(hydrateMassPreview);
+    updateMassCount();massEditorClose?.focus();
   }
 
-  function closeMassEditor(force=false){
-    const dirty=massEditorRows.querySelectorAll('tr.is-dirty').length;
-    if(!force&&dirty&&!confirm(`Discard unsaved changes to ${dirty} photo${dirty===1?'':'s'}?`))return;
+  function closeMassEditor(){
     massEditor.hidden=true;document.body.classList.remove('mass-editor-open');
-    massEditorRows.innerHTML='';
+    massEditorItems.innerHTML='';
   }
 
-  function massRowBody(row){
-    const body={
-      category:row.querySelector('[data-mass-field="category"]').value||null,
-      gallery:row.querySelector('[data-mass-field="gallery"]').value.trim()||null,
-      caption:row.querySelector('[data-mass-field="caption"]').value.trim()||null,
-      alt_text:row.querySelector('[data-mass-field="alt_text"]').value.trim()||null,
-      featured:row.querySelector('[data-mass-field="featured"]').checked
-    };
-    const action=row.querySelector('[data-mass-action]').value;if(action)body.action=action;
+  function massSharedBody(){
+    const body={};
+    if(massCategory.value)body.category=massCategory.value==='__clear__'?null:massCategory.value;
+    if(massGallery.value.trim())body.gallery=massGallery.value.trim();
+    if(massCaption.value.trim())body.caption=massCaption.value.trim();
+    if(massAlt.value.trim())body.alt_text=massAlt.value.trim();
+    if(massFeatured.value)body.featured=massFeatured.value==='true';
     return body;
   }
 
-  function applyMassFill(){
-    const rows=[...massEditorRows.querySelectorAll('tr')].filter(row=>row.querySelector('[data-mass-select]').checked);
-    if(!rows.length){massEditorStatus.textContent='Check at least one row first.';return;}
-    const category=massFillCategory.value;const gallery=massFillGallery.value;const featured=massFillFeatured.value;
-    if(!category&&gallery===''&&!featured){massEditorStatus.textContent='Choose a fill value first.';return;}
-    rows.forEach(row=>{
-      if(category)row.querySelector('[data-mass-field="category"]').value=category==='__clear__'?'':category;
-      if(gallery!=='')row.querySelector('[data-mass-field="gallery"]').value=gallery;
-      if(featured)row.querySelector('[data-mass-field="featured"]').checked=featured==='true';
-      row.classList.add('is-dirty');
-    });
-    updateMassDirty();massEditorStatus.textContent=`Fill applied to ${rows.length} row${rows.length===1?'':'s'}. Save when ready.`;
-  }
-
   async function saveMassEditor(){
-    const rows=[...massEditorRows.querySelectorAll('tr.is-dirty')];
-    if(!rows.length){massEditorStatus.textContent='There are no changes to save.';return;}
-    massEditorSave.disabled=true;massEditorStatus.textContent=`Saving 0 of ${rows.length}…`;
+    const selected=[...massEditorItems.querySelectorAll('.mass-picker-item')].filter(item=>item.querySelector('[data-mass-select]').checked);
+    if(!selected.length){massEditorStatus.textContent='Select at least one photo.';return;}
+    const body=massSharedBody();
+    if(!Object.keys(body).length){massEditorStatus.textContent='Set at least one field.';return;}
+    massEditorSave.disabled=true;massEditorStatus.textContent=`Applying changes to ${selected.length} photo${selected.length===1?'':'s'}…`;
     let saved=0;const failures=[];
-    for(const row of rows){
+    for(const item of selected){
       try{
-        const response=await request('/api/admin/media/'+encodeURIComponent(row.dataset.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(massRowBody(row))});
+        const response=await request('/api/admin/media/'+encodeURIComponent(item.dataset.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
         const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||('HTTP '+response.status));
-        saved+=1;row.classList.remove('is-dirty');massEditorStatus.textContent=`Saving ${saved} of ${rows.length}…`;
-      }catch(error){failures.push(error.message);row.classList.add('has-error');}
+        saved+=1;
+      }catch(error){failures.push(error.message);item.classList.add('has-error');}
     }
     massEditorSave.disabled=false;
-    if(failures.length){massEditorStatus.textContent=`${saved} saved; ${failures.length} failed. ${failures[0]}`;updateMassDirty();return;}
-    closeMassEditor(true);await load();msg(`${saved} photo${saved===1?'':'s'} updated.`);
+    if(failures.length){massEditorStatus.textContent=`${saved} updated; ${failures.length} failed. ${failures[0]}`;return;}
+    closeMassEditor();await load();msg(`${saved} photo${saved===1?'':'s'} updated.`);
   }
 
   function selectedBoxes(){return [...list.querySelectorAll('[data-select-item]:checked')];}
@@ -571,14 +534,8 @@
   massEditorClose?.addEventListener('click',()=>closeMassEditor());
   massEditorCancel?.addEventListener('click',()=>closeMassEditor());
   massEditorSave?.addEventListener('click',saveMassEditor);
-  massSelectAll?.addEventListener('change',()=>{massEditorRows.querySelectorAll('[data-mass-select]').forEach(box=>box.checked=massSelectAll.checked);updateMassCount();});
-  massApplyFill?.addEventListener('click',applyMassFill);
-  massEditorRows?.addEventListener('change',event=>{
-    if(event.target.matches('[data-mass-select]')){updateMassCount();return;}
-    if(event.target.matches('[data-mass-field],[data-mass-action]')){event.target.closest('tr')?.classList.add('is-dirty');updateMassDirty();}
-  });
-  massEditorRows?.addEventListener('input',event=>{if(event.target.matches('[data-mass-field]')){event.target.closest('tr')?.classList.add('is-dirty');updateMassDirty();}});
-  massEditorRows?.addEventListener('click',async event=>{const button=event.target.closest('[data-mass-preview-url]');if(button)await openPreview(button);});
+  massSelectAll?.addEventListener('change',()=>{massEditorItems.querySelectorAll('[data-mass-select]').forEach(box=>box.checked=massSelectAll.checked);updateMassCount();});
+  massEditorItems?.addEventListener('change',event=>{if(event.target.matches('[data-mass-select]'))updateMassCount();});
   bulkModeToggle?.addEventListener('click',()=>setBulkMode(!bulkMode));
   bulkModeDone?.addEventListener('click',()=>setBulkMode(false));
   bulkEditDetails?.addEventListener('click',()=>{if(selectedIds().length&&bulkEditor)bulkEditor.hidden=false;});

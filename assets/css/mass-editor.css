@@ -1,0 +1,189 @@
+.mass-editor {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.mass-editor-simple {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(300px, .7fr);
+  gap: 18px;
+  padding: 18px 24px;
+  overflow: hidden;
+}
+
+.mass-picker,
+.mass-shared-fields {
+  min-height: 0;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.mass-picker {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.mass-picker-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mass-picker-head label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+
+.mass-picker-grid {
+  overflow: auto;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+
+.mass-picker-item {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 2px solid transparent;
+  border-radius: 11px;
+  background: var(--soft);
+  cursor: pointer;
+}
+
+.mass-picker-item:has(input:checked) {
+  border-color: var(--green);
+  background: #edf6e9;
+}
+
+.mass-picker-item > input {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  width: 21px;
+  height: 21px;
+  z-index: 2;
+  accent-color: var(--green);
+}
+
+.mass-picker-thumb {
+  height: 105px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e2e6df;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.mass-picker-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mass-picker-item strong {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.mass-picker-item.has-error {
+  border-color: #8e2d27;
+  background: #fff0ed;
+}
+
+.mass-shared-fields {
+  padding: 18px;
+  overflow: auto;
+  align-self: start;
+  display: grid;
+  gap: 13px;
+}
+
+.mass-shared-fields h3 {
+  margin: 0;
+}
+
+.mass-shared-fields > p {
+  margin: -7px 0 3px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.mass-shared-fields label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.mass-shared-fields select,
+.mass-shared-fields input,
+.mass-shared-fields textarea {
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.mass-shared-fields textarea {
+  resize: vertical;
+}
+
+@media (max-width: 850px) {
+  .mass-editor-simple {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(260px, 1fr) auto;
+    padding: 12px;
+  }
+
+  .mass-shared-fields {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    max-height: 42vh;
+  }
+
+  .mass-shared-fields h3,
+  .mass-shared-fields > p {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .mass-picker-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 9px;
+    gap: 8px;
+  }
+
+  .mass-picker-thumb {
+    height: 90px;
+  }
+
+  .mass-shared-fields {
+    grid-template-columns: 1fr;
+    max-height: 46vh;
+  }
+
+  .mass-shared-fields h3,
+  .mass-shared-fields > p {
+    grid-column: auto;
+  }
+
+  .mass-editor-header p {
+    display: none;
+  }
+}
