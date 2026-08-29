@@ -76,6 +76,7 @@
   const massCaption=document.querySelector('[data-mass-caption]');
   const massAlt=document.querySelector('[data-mass-alt]');
   const massFeatured=document.querySelector('[data-mass-featured]');
+  const massAction=document.querySelector('[data-mass-action]');
   const objectUrls=new Set();
   let currentSession=null;
   let bulkMode=false;
@@ -308,6 +309,9 @@
     massEditorItems.innerHTML='';
     currentItems.forEach(item=>massEditorItems.append(massItem(item)));
     massCategory.value='';massGallery.value='';massCaption.value='';massAlt.value='';massFeatured.value='';
+    const statusActions={pending:[['review','Start review'],['approve','Approve'],['reject','Reject']],review:[['approve','Approve'],['reject','Reject']],approved:[['publish','Publish']],published:[['archive','Archive']],archived:[['restore','Republish']],rejected:[['restore','Restore to pending']],processing:[]};
+    const actions=statusActions[statusFilter?.value||'pending']||[];
+    massAction.innerHTML='<option value="">No status change</option>'+actions.map(([value,label])=>`<option value="${value}">${label}</option>`).join('');
     massEditor.hidden=false;
     document.body.classList.add('mass-editor-open');
     massEditorItems.querySelectorAll('[data-mass-preview-url]').forEach(hydrateMassPreview);
@@ -326,6 +330,7 @@
     if(massCaption.value.trim())body.caption=massCaption.value.trim();
     if(massAlt.value.trim())body.alt_text=massAlt.value.trim();
     if(massFeatured.value)body.featured=massFeatured.value==='true';
+    if(massAction.value)body.action=massAction.value;
     return body;
   }
 
@@ -334,6 +339,10 @@
     if(!selected.length){massEditorStatus.textContent='Select at least one photo.';return;}
     const body=massSharedBody();
     if(!Object.keys(body).length){massEditorStatus.textContent='Set at least one field.';return;}
+    if(body.action&&['approve','publish','archive','reject','restore'].includes(body.action)){
+      const label={approve:'Approve',publish:'Publish',archive:'Archive',reject:'Reject',restore:'Restore'}[body.action];
+      if(!confirm(`${label} ${selected.length} selected photo${selected.length===1?'':'s'}?`))return;
+    }
     massEditorSave.disabled=true;massEditorStatus.textContent=`Applying changes to ${selected.length} photo${selected.length===1?'':'s'}…`;
     let saved=0;const failures=[];
     for(const item of selected){
