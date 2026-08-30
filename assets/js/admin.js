@@ -70,6 +70,7 @@
   const massEditorSave=document.querySelector('[data-mass-editor-save]');
   const massEditorStatus=document.querySelector('[data-mass-editor-status]');
   const massSelectAll=document.querySelector('[data-mass-select-all]');
+  const massClear=document.querySelector('[data-mass-clear]');
   const massCount=document.querySelector('[data-mass-count]');
   const massCategory=document.querySelector('[data-mass-category]');
   const massGallery=document.querySelector('[data-mass-gallery]');
@@ -286,7 +287,7 @@
     const el=document.createElement('label');
     el.className='mass-picker-item';
     el.dataset.id=item.id;
-    el.innerHTML=`<input type="checkbox" data-mass-select aria-label="Select ${title}"><span class="mass-picker-thumb" data-mass-preview-url="${escapeHtml(item.preview_url||item.public_url||'')}"><span>Loading…</span></span><strong>${title}</strong>`;
+    el.innerHTML=`<input type="checkbox" data-mass-select aria-label="Select ${title}"><span class="mass-selected-mark" aria-hidden="true">✓</span><span class="mass-picker-thumb" data-mass-preview-url="${escapeHtml(item.preview_url||item.public_url||'')}"><span>Loading…</span></span><strong>${title}</strong>`;
     return el;
   }
 
@@ -300,8 +301,10 @@
     const checked=boxes.filter(box=>box.checked);
     if(massCount)massCount.textContent=`${checked.length} selected`;
     if(massSelectAll){massSelectAll.checked=boxes.length>0&&checked.length===boxes.length;massSelectAll.indeterminate=checked.length>0&&checked.length<boxes.length;}
-    if(massEditorSave)massEditorSave.disabled=checked.length===0;
-    if(massEditorStatus)massEditorStatus.textContent=checked.length?`${checked.length} photo${checked.length===1?'':'s'} selected.`:'Select photos to edit.';
+    const hasChanges=Object.keys(massSharedBody()).length>0;
+    if(massEditorSave){massEditorSave.disabled=checked.length===0||!hasChanges;massEditorSave.textContent=checked.length?`Apply to ${checked.length} photo${checked.length===1?'':'s'}`:'Apply to selected';}
+    if(massClear)massClear.disabled=checked.length===0;
+    if(massEditorStatus)massEditorStatus.textContent=!checked.length?'Select at least one photo.':!hasChanges?'Choose at least one change.':`Ready to update ${checked.length} photo${checked.length===1?'':'s'}.`;
   }
 
   function openMassEditor(){
@@ -545,7 +548,9 @@
   massEditor?.addEventListener('click',event=>{if(event.target===massEditor)closeMassEditor();});
   massEditorSave?.addEventListener('click',saveMassEditor);
   massSelectAll?.addEventListener('change',()=>{massEditorItems.querySelectorAll('[data-mass-select]').forEach(box=>box.checked=massSelectAll.checked);updateMassCount();});
+  massClear?.addEventListener('click',()=>{massEditorItems.querySelectorAll('[data-mass-select]').forEach(box=>box.checked=false);updateMassCount();});
   massEditorItems?.addEventListener('change',event=>{if(event.target.matches('[data-mass-select]'))updateMassCount();});
+  [massCategory,massGallery,massCaption,massAlt,massFeatured,massAction].forEach(field=>{field?.addEventListener('input',updateMassCount);field?.addEventListener('change',updateMassCount);});
   bulkModeToggle?.addEventListener('click',()=>setBulkMode(!bulkMode));
   bulkModeDone?.addEventListener('click',()=>setBulkMode(false));
   bulkEditDetails?.addEventListener('click',()=>{if(selectedIds().length&&bulkEditor)bulkEditor.hidden=false;});

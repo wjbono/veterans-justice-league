@@ -155,12 +155,15 @@
     </header>
     <div class="mass-editor-simple">
       <div class="mass-picker">
-        <div class="mass-picker-head"><label><input type="checkbox" data-mass-select-all> Select all</label><strong data-mass-count>0 selected</strong></div>
+        <div class="mass-picker-head">
+          <div class="mass-step-title"><span>1</span><div><strong>Select photos</strong><small>Tap any photo to include it</small></div></div>
+          <div class="mass-picker-tools"><label><input type="checkbox" data-mass-select-all> Select all</label><button type="button" data-mass-clear>Clear</button><strong data-mass-count>0 selected</strong></div>
+        </div>
         <div class="mass-picker-grid" data-mass-editor-items></div>
       </div>
       <div class="mass-shared-fields">
-        <h3>Set fields for selected photos</h3>
-        <p>Blank fields will not be changed.</p>
+        <div class="mass-step-title"><span>2</span><div><h3>Choose changes</h3><small>These changes apply to every selected photo</small></div></div>
+        <p class="mass-help">Leave anything set to “No change” or blank to keep its current value.</p>
         <label>Website section<select data-mass-category><option value="">No change</option><option value="__clear__">Unsorted</option><option value="housing">Housing</option><option value="behind-the-wall">Behind-the-Wall</option><option value="outreach">Outreach</option><option value="events">Events</option><option value="team">Team</option><option value="partners">Partners</option></select></label>
         <label>Gallery / event<input type="text" data-mass-gallery placeholder="No change"></label>
         <label>Caption<input type="text" data-mass-caption placeholder="No change"></label>
@@ -169,7 +172,7 @@
         <label>Status action<select data-mass-action><option value="">No status change</option></select></label>
       </div>
     </div>
-    <footer class="mass-editor-footer"><span data-mass-editor-status role="status" aria-live="polite">Select photos to edit.</span><button class="secondary" type="button" data-mass-editor-cancel>Cancel</button><button class="primary" type="button" data-mass-editor-save>Apply to selected</button></footer>
+    <footer class="mass-editor-footer"><div class="mass-footer-status"><span class="mass-step-number">3</span><span data-mass-editor-status role="status" aria-live="polite">Select photos to edit.</span></div><button class="secondary" type="button" data-mass-editor-cancel>Cancel</button><button class="primary" type="button" data-mass-editor-save>Apply to selected</button></footer>
     </div>
   </section>
 

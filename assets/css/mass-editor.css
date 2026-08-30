@@ -6,13 +6,14 @@
 }
 
 .mass-editor-dialog {
-  width: min(1500px, 100%);
-  height: min(900px, 100%);
+  width: min(1320px, 100%);
+  height: min(880px, 100%);
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: hidden;
-  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, .45);
+  border-radius: 20px;
   background: #f4f6f3;
   box-shadow: 0 24px 80px rgba(0, 0, 0, .38);
 }
@@ -21,8 +22,8 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(300px, .7fr);
-  gap: 18px;
-  padding: 18px 24px;
+  gap: 16px;
+  padding: 18px 20px;
   overflow: hidden;
 }
 
@@ -44,15 +45,84 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 14px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--line);
 }
 
+.mass-picker-tools,
 .mass-picker-head label {
   display: flex;
   align-items: center;
   gap: 8px;
   font-weight: 800;
+}
+
+.mass-picker-tools {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.mass-picker-tools button {
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: #edf0eb;
+  color: var(--ink);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mass-picker-tools button:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.mass-picker-tools > strong {
+  min-width: 78px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #e3f0dd;
+  color: #2c5b21;
+  text-align: center;
+  font-size: 12px;
+}
+
+.mass-step-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mass-step-title > span,
+.mass-step-number {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.mass-step-title > div {
+  display: grid;
+  gap: 2px;
+}
+
+.mass-step-title strong,
+.mass-step-title h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.mass-step-title small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .mass-picker-grid {
@@ -69,15 +139,22 @@
   display: grid;
   gap: 7px;
   padding: 9px;
-  border: 2px solid transparent;
+  border: 2px solid #e5e9e2;
   border-radius: 11px;
-  background: var(--soft);
+  background: #fff;
   cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.mass-picker-item:hover {
+  border-color: #b8c7b2;
+  transform: translateY(-1px);
 }
 
 .mass-picker-item:has(input:checked) {
   border-color: var(--green);
   background: #edf6e9;
+  box-shadow: 0 0 0 3px rgba(59, 125, 35, .13);
 }
 
 .mass-picker-item > input {
@@ -90,8 +167,28 @@
   accent-color: var(--green);
 }
 
+.mass-selected-mark {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  width: 25px;
+  height: 25px;
+  display: none;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  font-weight: 900;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
+}
+
+.mass-picker-item:has(input:checked) .mass-selected-mark {
+  display: grid;
+}
+
 .mass-picker-thumb {
-  height: 105px;
+  height: 120px;
   border-radius: 8px;
   overflow: hidden;
   background: #e2e6df;
@@ -118,11 +215,11 @@
 }
 
 .mass-shared-fields {
-  padding: 18px;
+  padding: 17px;
   overflow: auto;
   align-self: start;
   display: grid;
-  gap: 13px;
+  gap: 12px;
 }
 
 .mass-shared-fields h3 {
@@ -130,9 +227,17 @@
 }
 
 .mass-shared-fields > p {
-  margin: -7px 0 3px;
+  margin: 0 0 3px;
   color: var(--muted);
   font-size: 13px;
+}
+
+.mass-help {
+  padding: 9px 10px;
+  border-left: 3px solid var(--green);
+  border-radius: 6px;
+  background: #f0f5ed;
+  line-height: 1.35;
 }
 
 .mass-shared-fields label {
@@ -148,10 +253,34 @@
   width: 100%;
   padding: 10px 11px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 9px;
   background: #fff;
   color: var(--ink);
   font: inherit;
+}
+
+.mass-shared-fields select:focus,
+.mass-shared-fields input:focus,
+.mass-shared-fields textarea:focus {
+  outline: 3px solid rgba(59, 125, 35, .15);
+  border-color: var(--green);
+}
+
+.mass-footer-status {
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 750;
+}
+
+.mass-editor-footer .mass-footer-status > span {
+  margin-right: 0;
+}
+
+.mass-editor-footer .primary {
+  min-width: 170px;
+  box-shadow: 0 6px 16px rgba(59, 125, 35, .2);
 }
 
 .mass-shared-fields textarea {
@@ -182,7 +311,8 @@
   }
 
   .mass-shared-fields h3,
-  .mass-shared-fields > p {
+  .mass-shared-fields > p,
+  .mass-shared-fields > .mass-step-title {
     grid-column: 1 / -1;
   }
 }
@@ -204,7 +334,8 @@
   }
 
   .mass-shared-fields h3,
-  .mass-shared-fields > p {
+  .mass-shared-fields > p,
+  .mass-shared-fields > .mass-step-title {
     grid-column: auto;
   }
 
