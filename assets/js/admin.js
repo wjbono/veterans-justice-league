@@ -542,6 +542,7 @@
   massEditorOpen?.addEventListener('click',openMassEditor);
   massEditorClose?.addEventListener('click',()=>closeMassEditor());
   massEditorCancel?.addEventListener('click',()=>closeMassEditor());
+  massEditor?.addEventListener('click',event=>{if(event.target===massEditor)closeMassEditor();});
   massEditorSave?.addEventListener('click',saveMassEditor);
   massSelectAll?.addEventListener('change',()=>{massEditorItems.querySelectorAll('[data-mass-select]').forEach(box=>box.checked=massSelectAll.checked);updateMassCount();});
   massEditorItems?.addEventListener('change',event=>{if(event.target.matches('[data-mass-select]'))updateMassCount();});

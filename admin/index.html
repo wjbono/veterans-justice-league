@@ -147,7 +147,8 @@
     </div>
   </main>
 
-  <section class="mass-editor" data-mass-editor hidden aria-labelledby="mass-editor-title">
+  <section class="mass-editor" data-mass-editor hidden role="dialog" aria-modal="true" aria-labelledby="mass-editor-title">
+    <div class="mass-editor-dialog" data-mass-editor-dialog>
     <header class="mass-editor-header">
       <div><h2 id="mass-editor-title">Mass edit</h2><p>Select photos, set the shared fields, and apply.</p></div>
       <button class="secondary" type="button" data-mass-editor-close>Close</button>
@@ -169,6 +170,7 @@
       </div>
     </div>
     <footer class="mass-editor-footer"><span data-mass-editor-status role="status" aria-live="polite">Select photos to edit.</span><button class="secondary" type="button" data-mass-editor-cancel>Cancel</button><button class="primary" type="button" data-mass-editor-save>Apply to selected</button></footer>
+    </div>
   </section>
 
   <footer class="footer">

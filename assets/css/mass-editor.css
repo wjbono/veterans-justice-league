@@ -1,5 +1,20 @@
 .mass-editor {
+  padding: 28px;
+  place-items: center;
+  background: rgba(13, 18, 14, .72);
+  backdrop-filter: blur(2px);
+}
+
+.mass-editor-dialog {
+  width: min(1500px, 100%);
+  height: min(900px, 100%);
+  min-height: 0;
+  display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #f4f6f3;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .38);
 }
 
 .mass-editor-simple {
@@ -144,6 +159,16 @@
 }
 
 @media (max-width: 850px) {
+  .mass-editor {
+    padding: 12px;
+  }
+
+  .mass-editor-dialog {
+    width: 100%;
+    height: 100%;
+    border-radius: 14px;
+  }
+
   .mass-editor-simple {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(260px, 1fr) auto;
