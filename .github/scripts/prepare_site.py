@@ -180,6 +180,7 @@ def main():
         prepare_public_page(filename)
     add_noindex(ROOT / '404.html', 'assets/images/vjl-logo.png', 'assets/css/qc.css')
     add_noindex(ROOT / 'admin/index.html', '../assets/images/vjl-logo.png', '../assets/css/qc.css')
+    add_noindex(ROOT / 'admin/users.html', '../assets/images/vjl-logo.png', '../assets/css/qc.css')
     print(f'Prepared static launch metadata and cache-busted assets for {len(PUBLIC_PAGES)} public pages plus noindex pages.')
 
 if __name__ == '__main__':

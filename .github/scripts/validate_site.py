@@ -42,6 +42,7 @@ class PageParser(HTMLParser):
         self.h1_count = 0
         self.has_nav = False
         self.has_skip = False
+        self.has_main = False
         self.has_qc = False
         self.refs = []
         self.blank_links = []
@@ -67,6 +68,8 @@ class PageParser(HTMLParser):
             self.has_nav = True
             if 'data-mobile-menu' in data:
                 self.mobile_nav = data
+        elif tag == 'main' and data.get('id') == 'main':
+            self.has_main = True
         elif tag == 'script' and data.get('id') == 'vjl-org-schema' and data.get('type') == 'application/ld+json':
             self.has_org_schema = True
         elif tag == 'button' and 'data-menu-button' in data:
@@ -173,6 +176,8 @@ def validate_page(name):
         errors.append(f'{name}: missing <nav>')
     if not parser.has_skip:
         errors.append(f'{name}: missing skip link')
+    if not parser.has_main:
+        errors.append(f'{name}: missing main content target')
     if not parser.has_qc:
         errors.append(f'{name}: missing build-time QC stylesheet')
 
@@ -266,19 +271,24 @@ def validate_page(name):
 
 def validate_admin():
     errors = []
-    parser, _, parse_errors = parse_page('admin/index.html')
-    errors.extend(parse_errors)
-    if parser is None:
-        return errors
-    robots = parser.meta.get('robots','').lower()
-    if 'noindex' not in robots or 'nofollow' not in robots:
-        errors.append('admin/index.html: missing noindex,nofollow robots directive')
-    if not parser.has_qc:
-        errors.append('admin/index.html: missing build-time QC stylesheet')
-    for attr, raw in parser.refs:
-        target = local_target(ROOT / 'admin/index.html', raw)
-        if target is not None and not target.exists():
-            errors.append(f'admin/index.html: broken local {attr}: {raw}')
+    for name in ('admin/index.html', 'admin/users.html'):
+        parser, _, parse_errors = parse_page(name)
+        errors.extend(parse_errors)
+        if parser is None:
+            continue
+        robots = parser.meta.get('robots','').lower()
+        if 'noindex' not in robots or 'nofollow' not in robots:
+            errors.append(f'{name}: missing noindex,nofollow robots directive')
+        if not parser.has_qc:
+            errors.append(f'{name}: missing build-time QC stylesheet')
+        if not parser.has_skip:
+            errors.append(f'{name}: missing skip link')
+        if not parser.has_main:
+            errors.append(f'{name}: missing main content target')
+        for attr, raw in parser.refs:
+            target = local_target(ROOT / name, raw)
+            if target is not None and not target.exists():
+                errors.append(f'{name}: broken local {attr}: {raw}')
     return errors
 
 

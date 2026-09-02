@@ -5,7 +5,7 @@ html{overflow-x:hidden}body{overflow-x:hidden}main:focus{outline:none}p,li,a,str
 .btn-donate{background:var(--orange-dark)}
 .contact-card .btn-donate{color:#fff}
 .fine{color:var(--muted)}
-.nav a[aria-current="page"],.mobile-menu a[aria-current="page"]{color:var(--green-dark)}
+.nav a[aria-current],.mobile-menu a[aria-current]{color:var(--green-dark)}
 .mobile-menu a{min-height:44px;display:flex;align-items:center}
 button,.btn{touch-action:manipulation}
 img{height:auto}

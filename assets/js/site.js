@@ -45,12 +45,21 @@ document.querySelectorAll('img').forEach((img,index)=>{
 
 // Normalize navigation and current-page state.
 const currentFile=pageFile;
+const sectionParent={
+  'housing.html':'programs.html',
+  'behind-the-wall.html':'programs.html',
+  'outreach.html':'programs.html',
+  'team.html':'about.html'
+}[currentFile];
 document.querySelectorAll('nav a').forEach(link=>{
   if(link.textContent.trim()==='Programs') link.setAttribute('href',inAdmin?'../programs.html':'programs.html');
   const href=(link.getAttribute('href')||'').split('#')[0].split('?')[0].toLowerCase();
   const target=href.split('/').pop();
   if(target&&target===currentFile){
     link.setAttribute('aria-current','page');
+    link.classList.add('active');
+  }else if(sectionParent&&target===sectionParent){
+    link.setAttribute('aria-current','location');
     link.classList.add('active');
   }
 });
