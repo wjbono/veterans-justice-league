@@ -21,7 +21,8 @@
       const preload=new Image();
       preload.onload=()=>{
         image.src=source(item);
-        image.alt=clean(item.alt_text)||clean(item.caption)||'Veterans Justice League Housing program';
+        const fallback={housing:'Veterans Justice League Housing program','behind-the-wall':'Behind-the-Wall Training',outreach:'Veterans Justice League Outreach'}[category]||'Veterans Justice League program';
+        image.alt=clean(item.alt_text)||clean(item.caption)||fallback;
         frame.classList.add('has-media');
         frame.classList.remove('is-loading');
       };
