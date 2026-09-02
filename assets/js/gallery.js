@@ -23,7 +23,7 @@
   let touchStartX=null;
   let loadSequence=0;
 
-  const genericText=/^(test|testing|untitled|veterans justice league photo)$/i;
+  const genericText=/^(test|testing|untitled|garbage|mass edited|you know what it is|veterans justice league photo)$/i;
   const cleanText=value=>{
     const text=String(value||'').trim();
     return !text||genericText.test(text)?'':text;
