@@ -22,6 +22,7 @@
       preload.onload=()=>{
         image.src=source(item);
         image.alt=clean(item.alt_text)||clean(item.caption)||'Veterans Justice League Housing program';
+        frame.classList.add('has-media');
         frame.classList.remove('is-loading');
       };
       preload.onerror=()=>frame.classList.remove('is-loading');
