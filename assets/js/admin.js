@@ -6,6 +6,7 @@
   const loginPanel=document.querySelector('[data-login-panel]');
   const bootstrapPanel=document.querySelector('[data-bootstrap-panel]');
   const passwordPanel=document.querySelector('[data-password-panel]');
+  const destinationPanel=document.querySelector('[data-destination-panel]');
   const workspace=document.querySelector('[data-admin-workspace]');
   const account=document.querySelector('[data-admin-account]');
   const accountUser=document.querySelector('[data-admin-user]');
@@ -13,6 +14,8 @@
   const usersLink=document.querySelector('[data-users-link]');
   const advanced=document.querySelector('[data-admin-advanced]');
   const signOut=document.querySelector('[data-sign-out]');
+  const openMediaManager=document.querySelector('[data-open-media-manager]');
+  const directMedia=new URLSearchParams(location.search).get('view')==='media';
 
   const loginForm=document.querySelector('[data-login-form]');
   const loginUsername=document.querySelector('[data-login-username]');
@@ -91,7 +94,7 @@
   const maintenanceMsg=text=>{if(maintenanceStatus)maintenanceStatus.textContent=text;};
 
   function hideAll(){
-    [loginPanel,bootstrapPanel,passwordPanel,workspace].forEach(el=>{if(el)el.hidden=true;});
+    [loginPanel,bootstrapPanel,passwordPanel,destinationPanel,workspace].forEach(el=>{if(el)el.hidden=true;});
   }
 
   function showLogin(message='Enter your username and password.'){
@@ -137,6 +140,25 @@
     }
     if(usersLink)usersLink.hidden=user.role!=='admin';
     if(advanced)advanced.hidden=user.role!=='admin';
+  }
+
+  function showDestination(session){
+    currentSession=session;
+    const user=session?.user||{};
+    hideAll();
+    if(destinationPanel)destinationPanel.hidden=false;
+    if(account){
+      account.hidden=false;
+      if(accountUser)accountUser.textContent=user.display_name||user.username||'User';
+      if(accountRole)accountRole.textContent='Administrator';
+    }
+    if(usersLink)usersLink.hidden=true;
+  }
+
+  async function routeSession(session){
+    if(session?.user?.role==='admin'&&!directMedia){showDestination(session);return;}
+    showWorkspace(session);
+    await load();
   }
 
   async function handleProtectedResponse(response){
@@ -506,7 +528,7 @@
       loginPassword.value='';
       const session={user:data.user,expires_at:data.expires_at};
       if(data.user?.must_change_password)showPasswordChange(session);
-      else{showWorkspace(session);await load();}
+      else await routeSession(session);
     }catch(error){loginStatus.textContent=error.message;}
     finally{loginSubmit.disabled=false;}
   });
@@ -520,7 +542,7 @@
       if(!response.ok)throw new Error(data.error||'Setup failed.');
       bootstrapKey.value='';bootstrapPassword.value='';bootstrapConfirm.value='';
       const session={user:data.user,expires_at:data.expires_at};
-      showWorkspace(session);await load();
+      await routeSession(session);
     }catch(error){bootstrapStatus.textContent=error.message;}
     finally{bootstrapSubmit.disabled=false;}
   });
@@ -533,12 +555,13 @@
       const {response,data}=await auth.changePassword(currentPassword.value,newPassword.value);
       if(!response.ok)throw new Error(data.error||'Password change failed.');
       const session={user:data.user,expires_at:data.expires_at};
-      showWorkspace(session);await load();
+      await routeSession(session);
     }catch(error){passwordStatus.textContent=error.message;}
     finally{passwordSubmit.disabled=false;}
   });
 
   signOut?.addEventListener('click',async()=>{await auth.logout();showLogin('Signed out.');});
+  openMediaManager?.addEventListener('click',async()=>{showWorkspace(currentSession);await load();});
   document.querySelector('[data-refresh]')?.addEventListener('click',()=>load({preserveSelection:bulkMode}));
   statusFilter?.addEventListener('change',()=>{setBulkMode(false);load();});
   categoryFilter?.addEventListener('change',()=>{setBulkMode(false);load();});
@@ -594,7 +617,6 @@
     const session=await auth.session();
     if(!session){showLogin();return;}
     if(session.user?.must_change_password){showPasswordChange(session);return;}
-    showWorkspace(session);
-    await load();
+    await routeSession(session);
   })();
 })();

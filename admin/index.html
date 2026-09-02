@@ -8,6 +8,7 @@
   <title>Media Manager | Veterans Justice League</title>
   <link rel="stylesheet" href="../assets/css/styles.css?v=dev">
   <link rel="stylesheet" href="../assets/css/admin.css?v=dev">
+  <link rel="stylesheet" href="../assets/css/admin-destination.css?v=dev">
   <link rel="stylesheet" href="../assets/css/mass-editor.css?v=dev">
 <meta name="robots" content="noindex,nofollow,noarchive"><link rel="icon" type="image/png" href="../assets/images/vjl-logo.png"><link rel="stylesheet" data-vjl-qc href="../assets/css/qc.css?v=dev"></head>
 <body>
@@ -19,7 +20,7 @@
       <div class="admin-header-title">Website Administration</div>
       <div class="admin-account" data-admin-account hidden>
         <div class="admin-account-copy"><strong data-admin-user></strong><span data-admin-role></span></div>
-        <a class="btn btn-outline" href="users.html" data-users-link hidden>Users</a>
+        <a class="btn btn-outline" href="users.html" data-users-link hidden>User Administration</a>
         <button class="btn btn-outline admin-signout" type="button" data-sign-out>Sign out</button>
       </div>
       <a class="btn btn-outline admin-gallery-link" href="../gallery.html">Public Gallery</a>
@@ -71,6 +72,24 @@
             <button class="primary" type="submit" data-password-submit>Change password</button>
           </form>
           <div class="status-box" data-password-status role="status" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="admin-auth" data-destination-panel hidden>
+        <div class="admin-auth-card admin-destination-card">
+          <p class="eyebrow">Website administration</p>
+          <h1>Where would you like to go?</h1>
+          <p>You have Administrator access to both website management areas.</p>
+          <div class="admin-destination-options">
+            <button class="admin-destination-option" type="button" data-open-media-manager>
+              <span class="admin-destination-icon" aria-hidden="true">▧</span>
+              <span><strong>Photo Management</strong><small>Upload, review, approve, publish, and archive website photos.</small></span>
+            </button>
+            <a class="admin-destination-option" href="users.html">
+              <span class="admin-destination-icon" aria-hidden="true">◎</span>
+              <span><strong>User Administration</strong><small>Add users, manage roles, reset passwords, and control access.</small></span>
+            </a>
+          </div>
         </div>
       </section>
 
